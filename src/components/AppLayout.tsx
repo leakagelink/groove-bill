@@ -1,8 +1,9 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
-  Package, Tags, Truck, ShoppingCart, Receipt, LayoutDashboard, X, Menu
+  Package, Tags, Truck, ShoppingCart, Receipt, LayoutDashboard, X, Menu, LogOut
 } from 'lucide-react';
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -59,6 +60,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </NavLink>
           ))}
         </nav>
+        <div className="px-3 py-4 border-t border-sidebar-border">
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+          >
+            <LogOut size={18} />
+            Logout
+          </button>
+        </div>
       </aside>
 
       {/* Main content */}
