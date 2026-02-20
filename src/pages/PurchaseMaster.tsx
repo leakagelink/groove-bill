@@ -3,12 +3,13 @@ import { store } from '@/lib/store';
 import { Purchase, PurchaseItem } from '@/types/billing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, Search } from 'lucide-react';
+import { Plus, Trash2, Search, Edit } from 'lucide-react';
 
 export default function PurchaseMaster() {
   const [purchases, setPurchases] = useState<Purchase[]>(store.getPurchases());
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const suppliers = store.getSuppliers();
   const products = store.getProducts();
 
@@ -39,11 +40,19 @@ export default function PurchaseMaster() {
 
   const removeItem = (idx: number) => setItems(items.filter((_, i) => i !== idx));
 
+  const editPurchase = (p: Purchase) => {
+    setEditId(p.id);
+    setSupplierId(p.supplierId);
+    setDate(p.date);
+    setItems([...p.items]);
+    setShowForm(true);
+  };
+
   const save = () => {
     if (!supplierId || items.length === 0) return;
     const supplier = suppliers.find(s => s.id === supplierId);
     const purchase: Purchase = {
-      id: crypto.randomUUID(),
+      id: editId || crypto.randomUUID(),
       supplierId,
       supplierName: supplier?.name || '',
       date,
@@ -53,6 +62,7 @@ export default function PurchaseMaster() {
     store.savePurchase(purchase);
     setPurchases(store.getPurchases());
     setShowForm(false);
+    setEditId(null);
     setSupplierId('');
     setItems([]);
   };
@@ -65,14 +75,14 @@ export default function PurchaseMaster() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Purchase Master</h1>
-        <Button onClick={() => { setShowForm(true); setItems([]); setSupplierId(''); }}>
+        <Button onClick={() => { setShowForm(true); setItems([]); setSupplierId(''); setEditId(null); }}>
           <Plus size={16} className="mr-1" /> Add New
         </Button>
       </div>
 
       {showForm && (
         <div className="bg-card rounded-lg border p-5 space-y-4">
-          <h3 className="font-semibold text-foreground">New Purchase</h3>
+          <h3 className="font-semibold text-foreground">{editId ? 'Edit Purchase' : 'New Purchase'}</h3>
           <div className="grid sm:grid-cols-2 gap-3">
             <select
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -113,8 +123,8 @@ export default function PurchaseMaster() {
               Total: ₹{items.reduce((s, i) => s + i.total, 0).toLocaleString('en-IN')}
             </span>
             <div className="flex gap-3">
-              <Button onClick={save}>Save Purchase</Button>
-              <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button onClick={save}>{editId ? 'Update' : 'Save'} Purchase</Button>
+              <Button variant="outline" onClick={() => { setShowForm(false); setEditId(null); }}>Cancel</Button>
             </div>
           </div>
         </div>
@@ -134,15 +144,19 @@ export default function PurchaseMaster() {
               <th className="text-left p-3 font-medium text-muted-foreground">Supplier</th>
               <th className="text-right p-3 font-medium text-muted-foreground">Items</th>
               <th className="text-right p-3 font-medium text-muted-foreground">Total</th>
+              <th className="text-right p-3 font-medium text-muted-foreground">Actions</th>
             </tr></thead>
             <tbody className="divide-y">
-              {filtered.length === 0 && <tr><td colSpan={4} className="p-4 text-muted-foreground">No purchases found</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={5} className="p-4 text-muted-foreground">No purchases found</td></tr>}
               {filtered.map(p => (
                 <tr key={p.id} className="hover:bg-muted/30">
                   <td className="p-3 text-foreground">{new Date(p.date).toLocaleDateString('en-IN')}</td>
                   <td className="p-3 font-medium text-foreground">{p.supplierName}</td>
                   <td className="p-3 text-right text-muted-foreground">{p.items.length}</td>
                   <td className="p-3 text-right font-medium text-foreground">₹{p.totalAmount.toLocaleString('en-IN')}</td>
+                  <td className="p-3 text-right">
+                    <Button variant="ghost" size="sm" onClick={() => editPurchase(p)}><Edit size={14} /></Button>
+                  </td>
                 </tr>
               ))}
             </tbody>
