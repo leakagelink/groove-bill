@@ -23,12 +23,15 @@ export default function Auth() {
         if (error) throw error;
         toast({ title: 'Login successful!' });
       } else {
+        const redirectUrl = window.location.hostname.includes('homemuse.in')
+          ? 'https://homemuse.in'
+          : window.location.origin;
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: { full_name: fullName },
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: redirectUrl,
           },
         });
         if (error) throw error;
