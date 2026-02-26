@@ -8,6 +8,23 @@
     <meta name="author" content="Char Bhuja" />
     <link rel="icon" href="/favicon.png" type="image/png" />
 
+    <script>
+      // Cloudflare Worker Proxy for India access
+      (function() {
+        const SUPABASE_URL = "https://ffyhmewrruvhvwqkmvop.supabase.co";
+        const WORKER_URL = "https://charbhuja-proxy.deepseekhacks.workers.dev";
+        const originalFetch = window.fetch;
+        window.fetch = function(input, init) {
+          if (typeof input === "string" && input.includes(SUPABASE_URL)) {
+            input = input.replace(SUPABASE_URL, WORKER_URL);
+          } else if (input instanceof Request && input.url.includes(SUPABASE_URL)) {
+            input = new Request(input.url.replace(SUPABASE_URL, WORKER_URL), input);
+          }
+          return originalFetch.call(this, input, init);
+        };
+      })();
+    </script>
+
     <meta property="og:title" content="Char Bhuja Billing System" />
     <meta property="og:description" content="Char Bhuja - Billing & Inventory Management System" />
     <meta property="og:type" content="website" />
