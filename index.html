@@ -8,48 +8,6 @@
     <meta name="author" content="Char Bhuja" />
     <link rel="icon" href="/favicon.png" type="image/png" />
 
-    <script>
-      // Cloudflare Worker Proxy for India access
-      (function() {
-        var SB = "https://ffyhmewrruvhvwqkmvop.supabase.co";
-        var WK = "https://charbhuja-proxy.deepseekhacks.workers.dev";
-        function rep(u) { return u ? u.split(SB).join(WK) : u; }
-
-        // Patch fetch
-        var _fetch = window.fetch.bind(window);
-        window.fetch = function(input, init) {
-          if (typeof input === "string") {
-            input = rep(input);
-          } else if (input instanceof URL) {
-            input = new URL(rep(input.href));
-          } else if (input instanceof Request) {
-            var newUrl = rep(input.url);
-            if (newUrl !== input.url) {
-              input = new Request(newUrl, {
-                method: input.method,
-                headers: input.headers,
-                body: input.body,
-                mode: input.mode,
-                credentials: input.credentials,
-                cache: input.cache,
-                redirect: input.redirect,
-                referrer: input.referrer,
-                integrity: input.integrity,
-              });
-            }
-          }
-          return _fetch(input, init);
-        };
-
-        // Patch XMLHttpRequest
-        var _open = XMLHttpRequest.prototype.open;
-        XMLHttpRequest.prototype.open = function(method, url) {
-          arguments[1] = rep(url);
-          return _open.apply(this, arguments);
-        };
-      })();
-    </script>
-
     <meta property="og:title" content="Char Bhuja Billing System" />
     <meta property="og:description" content="Char Bhuja - Billing & Inventory Management System" />
     <meta property="og:type" content="website" />
