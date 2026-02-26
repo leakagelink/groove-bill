@@ -11,16 +11,41 @@
     <script>
       // Cloudflare Worker Proxy for India access
       (function() {
-        const SUPABASE_URL = "https://ffyhmewrruvhvwqkmvop.supabase.co";
-        const WORKER_URL = "https://charbhuja-proxy.deepseekhacks.workers.dev";
-        const originalFetch = window.fetch;
+        var SB = "https://ffyhmewrruvhvwqkmvop.supabase.co";
+        var WK = "https://charbhuja-proxy.deepseekhacks.workers.dev";
+        function rep(u) { return u ? u.split(SB).join(WK) : u; }
+
+        // Patch fetch
+        var _fetch = window.fetch.bind(window);
         window.fetch = function(input, init) {
-          if (typeof input === "string" && input.includes(SUPABASE_URL)) {
-            input = input.replace(SUPABASE_URL, WORKER_URL);
-          } else if (input instanceof Request && input.url.includes(SUPABASE_URL)) {
-            input = new Request(input.url.replace(SUPABASE_URL, WORKER_URL), input);
+          if (typeof input === "string") {
+            input = rep(input);
+          } else if (input instanceof URL) {
+            input = new URL(rep(input.href));
+          } else if (input instanceof Request) {
+            var newUrl = rep(input.url);
+            if (newUrl !== input.url) {
+              input = new Request(newUrl, {
+                method: input.method,
+                headers: input.headers,
+                body: input.body,
+                mode: input.mode,
+                credentials: input.credentials,
+                cache: input.cache,
+                redirect: input.redirect,
+                referrer: input.referrer,
+                integrity: input.integrity,
+              });
+            }
           }
-          return originalFetch.call(this, input, init);
+          return _fetch(input, init);
+        };
+
+        // Patch XMLHttpRequest
+        var _open = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function(method, url) {
+          arguments[1] = rep(url);
+          return _open.apply(this, arguments);
         };
       })();
     </script>
