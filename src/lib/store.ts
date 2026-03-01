@@ -2,9 +2,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Brand, Supplier, Product, Purchase, Sale, Customer } from '@/types/billing';
 
 async function getUserId(): Promise<string> {
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) throw new Error('Not authenticated');
-  return data.user.id;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) throw new Error('Not authenticated');
+  return session.user.id;
 }
 
 export const store = {

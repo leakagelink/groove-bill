@@ -4,27 +4,49 @@ import { Brand } from '@/types/billing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Search } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function BrandMaster() {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [name, setName] = useState('');
   const [search, setSearch] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-  const loadBrands = async () => setBrands(await store.getBrands());
+  const loadBrands = async () => {
+    try {
+      setBrands(await store.getBrands());
+    } catch (e: any) {
+      toast({ title: 'Error loading brands', description: e.message, variant: 'destructive' });
+    }
+  };
   useEffect(() => { loadBrands(); }, []);
 
   const save = async () => {
     if (!name.trim()) return;
-    await store.saveBrand({ id: editId || undefined, name: name.trim() } as Brand);
-    await loadBrands();
-    setName('');
-    setEditId(null);
+    setLoading(true);
+    try {
+      await store.saveBrand({ id: editId || undefined, name: name.trim() } as Brand);
+      await loadBrands();
+      setName('');
+      setEditId(null);
+      toast({ title: editId ? 'Brand updated!' : 'Brand added!' });
+    } catch (e: any) {
+      toast({ title: 'Error saving brand', description: e.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const remove = async (id: string) => {
-    await store.deleteBrand(id);
-    await loadBrands();
+    try {
+      await store.deleteBrand(id);
+      await loadBrands();
+      toast({ title: 'Brand deleted!' });
+    } catch (e: any) {
+      toast({ title: 'Error deleting brand', description: e.message, variant: 'destructive' });
+    }
   };
 
   const filtered = brands.filter(b => b.name.toLowerCase().includes(search.toLowerCase()));
@@ -39,7 +61,7 @@ export default function BrandMaster() {
         <h3 className="font-semibold text-foreground">{editId ? 'Edit Brand' : 'Add New Brand'}</h3>
         <div className="flex gap-3">
           <Input placeholder="Brand name" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && save()} />
-          <Button onClick={save}><Plus size={16} className="mr-1" />{editId ? 'Update' : 'Add'}</Button>
+          <Button onClick={save} disabled={loading}><Plus size={16} className="mr-1" />{editId ? 'Update' : 'Add'}</Button>
           {editId && <Button variant="outline" onClick={() => { setEditId(null); setName(''); }}>Cancel</Button>}
         </div>
       </div>

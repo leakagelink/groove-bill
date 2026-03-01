@@ -17,43 +17,65 @@ export default function ProductMaster() {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [showNewBrand, setShowNewBrand] = useState(false);
   const [newBrandName, setNewBrandName] = useState('');
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const loadData = async () => {
-    const [p, b] = await Promise.all([store.getProducts(), store.getBrands()]);
-    setProducts(p);
-    setBrands(b);
+    try {
+      const [p, b] = await Promise.all([store.getProducts(), store.getBrands()]);
+      setProducts(p);
+      setBrands(b);
+    } catch (e: any) {
+      toast({ title: 'Error loading data', description: e.message, variant: 'destructive' });
+    }
   };
   useEffect(() => { loadData(); }, []);
 
   const addNewBrand = async () => {
     if (!newBrandName.trim()) return;
-    const brandId = await store.saveBrand({ name: newBrandName.trim() } as Brand);
-    const updatedBrands = await store.getBrands();
-    setBrands(updatedBrands);
-    setForm({ ...form, brandId: brandId });
-    setNewBrandName('');
-    setShowNewBrand(false);
-    toast({ title: `Brand "${newBrandName.trim()}" added!` });
+    try {
+      const brandId = await store.saveBrand({ name: newBrandName.trim() } as Brand);
+      const updatedBrands = await store.getBrands();
+      setBrands(updatedBrands);
+      setForm({ ...form, brandId: brandId });
+      setNewBrandName('');
+      setShowNewBrand(false);
+      toast({ title: `Brand "${newBrandName.trim()}" added!` });
+    } catch (e: any) {
+      toast({ title: 'Error adding brand', description: e.message, variant: 'destructive' });
+    }
   };
 
   const save = async () => {
     if (!form.name.trim()) return;
-    const brand = brands.find(b => b.id === form.brandId);
-    await store.saveProduct({
-      id: editId || undefined,
-      ...form,
-      brandName: brand?.name || form.brandName,
-    } as Product);
-    await loadData();
-    setForm(empty);
-    setEditId(null);
-    setShowForm(false);
+    setLoading(true);
+    try {
+      const brand = brands.find(b => b.id === form.brandId);
+      await store.saveProduct({
+        id: editId || undefined,
+        ...form,
+        brandName: brand?.name || form.brandName,
+      } as Product);
+      await loadData();
+      setForm(empty);
+      setEditId(null);
+      setShowForm(false);
+      toast({ title: editId ? 'Product updated!' : 'Product added!' });
+    } catch (e: any) {
+      toast({ title: 'Error saving product', description: e.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const remove = async (id: string) => {
-    await store.deleteProduct(id);
-    await loadData();
+    try {
+      await store.deleteProduct(id);
+      await loadData();
+      toast({ title: 'Product deleted!' });
+    } catch (e: any) {
+      toast({ title: 'Error deleting product', description: e.message, variant: 'destructive' });
+    }
   };
 
   const edit = (p: Product) => {
@@ -109,7 +131,7 @@ export default function ProductMaster() {
             <Input type="number" placeholder="Discount %" value={form.discount || ''} onChange={e => setForm({ ...form, discount: parseFloat(e.target.value) || 0 })} />
           </div>
           <div className="flex gap-3">
-            <Button onClick={save}>{editId ? 'Update' : 'Save'}</Button>
+            <Button onClick={save} disabled={loading}>{editId ? 'Update' : 'Save'}</Button>
             <Button variant="outline" onClick={() => { setShowForm(false); setEditId(null); setForm(empty); }}>Cancel</Button>
           </div>
         </div>
