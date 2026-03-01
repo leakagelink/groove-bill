@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { store } from '@/lib/store';
 import { Brand } from '@/types/billing';
 import { Button } from '@/components/ui/button';
@@ -6,23 +6,25 @@ import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Search } from 'lucide-react';
 
 export default function BrandMaster() {
-  const [brands, setBrands] = useState<Brand[]>(store.getBrands());
+  const [brands, setBrands] = useState<Brand[]>([]);
   const [name, setName] = useState('');
   const [search, setSearch] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
 
-  const save = () => {
+  const loadBrands = async () => setBrands(await store.getBrands());
+  useEffect(() => { loadBrands(); }, []);
+
+  const save = async () => {
     if (!name.trim()) return;
-    const brand: Brand = { id: editId || crypto.randomUUID(), name: name.trim() };
-    store.saveBrand(brand);
-    setBrands(store.getBrands());
+    await store.saveBrand({ id: editId || undefined, name: name.trim() } as Brand);
+    await loadBrands();
     setName('');
     setEditId(null);
   };
 
-  const remove = (id: string) => {
-    store.deleteBrand(id);
-    setBrands(store.getBrands());
+  const remove = async (id: string) => {
+    await store.deleteBrand(id);
+    await loadBrands();
   };
 
   const filtered = brands.filter(b => b.name.toLowerCase().includes(search.toLowerCase()));

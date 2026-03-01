@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { store } from '@/lib/store';
 import { Sale, SaleItem, Customer, Product } from '@/types/billing';
 import { Button } from '@/components/ui/button';
@@ -7,12 +7,10 @@ import { Plus, Trash2, Search, Printer, Pencil, Check, X } from 'lucide-react';
 import BillPrint from '@/components/BillPrint';
 
 export default function SalesMaster() {
-  const [sales, setSales] = useState<Sale[]>(store.getSales());
+  const [sales, setSales] = useState<Sale[]>([]);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [productsList, setProductsList] = useState(store.getProducts());
-  const products = productsList;
-  const existingCustomers = store.getCustomers();
+  const [products, setProducts] = useState<Product[]>([]);
 
   // Edit product state
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -33,6 +31,12 @@ export default function SalesMaster() {
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [pendingSale, setPendingSale] = useState<Sale | null>(null);
 
+  const loadData = async () => {
+    const [s, p] = await Promise.all([store.getSales(), store.getProducts()]);
+    setSales(s); setProducts(p);
+  };
+  useEffect(() => { loadData(); }, []);
+
   const addItem = () => {
     setItems([...items, { productId: '', productName: '', brandName: '', quantity: 1, price: 0, discount: 0, discountAmount: 0, total: 0 }]);
   };
@@ -40,7 +44,6 @@ export default function SalesMaster() {
   const updateItem = (idx: number, field: string, value: string | number) => {
     const updated = [...items];
     const item = { ...updated[idx], [field]: value };
-
     if (field === 'productId') {
       const product = products.find(p => p.id === value);
       if (product) {
@@ -50,7 +53,6 @@ export default function SalesMaster() {
         item.discount = product.discount;
       }
     }
-
     const subtotal = item.quantity * item.price;
     item.discountAmount = (subtotal * item.discount) / 100;
     item.total = subtotal - item.discountAmount;
@@ -70,12 +72,11 @@ export default function SalesMaster() {
     }
   };
 
-  const saveEditProduct = () => {
+  const saveEditProduct = async () => {
     if (!editingProduct) return;
     const updated: Product = { ...editingProduct, name: editName, price: editPrice, discount: editDiscount };
-    store.saveProduct(updated);
-    setProductsList(store.getProducts());
-    // Update current sale items that use this product
+    await store.saveProduct(updated);
+    setProducts(await store.getProducts());
     setItems(items.map(item => {
       if (item.productId === updated.id) {
         const newItem = { ...item, productName: updated.name, price: updated.price, discount: updated.discount };
@@ -93,43 +94,28 @@ export default function SalesMaster() {
   const totalDiscount = items.reduce((s, i) => s + i.discountAmount, 0);
   const finalAmount = items.reduce((s, i) => s + i.total, 0);
 
-  const save = () => {
+  const save = async () => {
     if (!customerName.trim() || items.length === 0) return;
 
-    // Save customer
-    const customer: Customer = {
-      id: crypto.randomUUID(),
-      name: customerName,
-      phone: customerPhone,
-      address: customerAddress,
-    };
-    store.saveCustomer(customer);
+    const customerId = await store.saveCustomer({
+      name: customerName, phone: customerPhone, address: customerAddress,
+    } as Customer);
 
+    const invoiceNumber = await store.getNextInvoiceNumber();
     const sale: Sale = {
       id: crypto.randomUUID(),
-      invoiceNumber: store.getNextInvoiceNumber(),
-      customerId: customer.id,
-      customerName: customerName,
-      customerPhone: customerPhone,
-      date,
-      items,
-      totalAmount,
-      totalDiscount,
-      finalAmount,
+      invoiceNumber,
+      customerId: customerId,
+      customerName, customerPhone, date, items,
+      totalAmount, totalDiscount, finalAmount,
     };
-    store.saveSale(sale);
-    setSales(store.getSales());
+    await store.saveSale(sale);
+    setSales(await store.getSales());
 
-    // Show print dialog
     setPendingSale(sale);
     setShowPrintDialog(true);
-
-    // Reset form
     setShowForm(false);
-    setCustomerName('');
-    setCustomerPhone('');
-    setCustomerAddress('');
-    setItems([]);
+    setCustomerName(''); setCustomerPhone(''); setCustomerAddress(''); setItems([]);
   };
 
   const handlePrint = (withPrice: boolean) => {
@@ -147,21 +133,19 @@ export default function SalesMaster() {
   };
 
   const shareWhatsApp = (sale: Sale) => {
-    const items = sale.items.map((i, idx) => `${idx + 1}. ${i.productName} x${i.quantity} = ₹${i.total}`).join('\n');
+    const saleItems = sale.items.map((i, idx) => `${idx + 1}. ${i.productName} x${i.quantity} = ₹${i.total}`).join('\n');
     const message = encodeURIComponent(
       `*Char Bhuja - Invoice ${sale.invoiceNumber}*\n` +
       `Date: ${new Date(sale.date).toLocaleDateString('en-IN')}\n` +
       `Customer: ${sale.customerName}\n\n` +
-      `*Items:*\n${items}\n\n` +
+      `*Items:*\n${saleItems}\n\n` +
       `Total: ₹${sale.totalAmount.toLocaleString('en-IN')}\n` +
       `Discount: ₹${sale.totalDiscount.toLocaleString('en-IN')}\n` +
       `*Final Amount: ₹${sale.finalAmount.toLocaleString('en-IN')}*\n\n` +
       `Thank you for your purchase!`
     );
     const phone = sale.customerPhone ? sale.customerPhone.replace(/\D/g, '') : '';
-    const url = phone
-      ? `https://wa.me/91${phone}?text=${message}`
-      : `https://wa.me/?text=${message}`;
+    const url = phone ? `https://wa.me/91${phone}?text=${message}` : `https://wa.me/?text=${message}`;
     window.open(url, '_blank');
   };
 
@@ -172,53 +156,31 @@ export default function SalesMaster() {
 
   return (
     <div className="space-y-6">
-      {/* Print dialog */}
       {showPrintDialog && pendingSale && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30">
           <div className="bg-card rounded-lg border p-6 max-w-sm w-full mx-4 space-y-4">
             <h3 className="font-semibold text-foreground text-lg">Print Invoice</h3>
             <p className="text-sm text-muted-foreground">Invoice {pendingSale.invoiceNumber} saved successfully!</p>
             <div className="space-y-2">
-              <Button className="w-full" onClick={() => handlePrint(true)}>
-                <Printer size={16} className="mr-2" /> Print with Price
-              </Button>
-              <Button variant="outline" className="w-full" onClick={() => handlePrint(false)}>
-                <Printer size={16} className="mr-2" /> Print without Price
-              </Button>
-              <Button variant="outline" className="w-full" onClick={() => shareWhatsApp(pendingSale)}>
-                Share on WhatsApp
-              </Button>
-              <Button variant="ghost" className="w-full" onClick={() => { setShowPrintDialog(false); setPendingSale(null); }}>
-                Close
-              </Button>
+              <Button className="w-full" onClick={() => handlePrint(true)}><Printer size={16} className="mr-2" /> Print with Price</Button>
+              <Button variant="outline" className="w-full" onClick={() => handlePrint(false)}><Printer size={16} className="mr-2" /> Print without Price</Button>
+              <Button variant="outline" className="w-full" onClick={() => shareWhatsApp(pendingSale)}>Share on WhatsApp</Button>
+              <Button variant="ghost" className="w-full" onClick={() => { setShowPrintDialog(false); setPendingSale(null); }}>Close</Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Bill print component */}
-      {printSale && (
-        <BillPrint sale={printSale} showPrice={printWithPrice} onClose={() => setPrintSale(null)} />
-      )}
+      {printSale && <BillPrint sale={printSale} showPrice={printWithPrice} onClose={() => setPrintSale(null)} />}
 
-      {/* Edit product modal */}
       {editingProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30">
           <div className="bg-card rounded-lg border p-6 max-w-sm w-full mx-4 space-y-4">
             <h3 className="font-semibold text-foreground text-lg">Edit Product</h3>
             <div className="space-y-3">
-              <div>
-                <label className="text-sm text-muted-foreground">Product Name</label>
-                <Input value={editName} onChange={e => setEditName(e.target.value)} />
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground">Price (₹)</label>
-                <Input type="number" value={editPrice || ''} onChange={e => setEditPrice(parseFloat(e.target.value) || 0)} />
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground">Discount (%)</label>
-                <Input type="number" value={editDiscount || ''} onChange={e => setEditDiscount(parseFloat(e.target.value) || 0)} />
-              </div>
+              <div><label className="text-sm text-muted-foreground">Product Name</label><Input value={editName} onChange={e => setEditName(e.target.value)} /></div>
+              <div><label className="text-sm text-muted-foreground">Price (₹)</label><Input type="number" value={editPrice || ''} onChange={e => setEditPrice(parseFloat(e.target.value) || 0)} /></div>
+              <div><label className="text-sm text-muted-foreground">Discount (%)</label><Input type="number" value={editDiscount || ''} onChange={e => setEditDiscount(parseFloat(e.target.value) || 0)} /></div>
             </div>
             <div className="flex gap-2">
               <Button onClick={saveEditProduct}><Check size={14} className="mr-1" /> Save</Button>
@@ -230,15 +192,12 @@ export default function SalesMaster() {
 
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Sales Master</h1>
-        <Button onClick={() => { setShowForm(true); setItems([]); }}>
-          <Plus size={16} className="mr-1" /> New Sale
-        </Button>
+        <Button onClick={() => { setShowForm(true); setItems([]); }}><Plus size={16} className="mr-1" /> New Sale</Button>
       </div>
 
       {showForm && (
         <div className="bg-card rounded-lg border p-5 space-y-4">
           <h3 className="font-semibold text-foreground">New Sale</h3>
-
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Input placeholder="Customer Name *" value={customerName} onChange={e => setCustomerName(e.target.value)} />
             <Input placeholder="Phone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
@@ -251,15 +210,10 @@ export default function SalesMaster() {
               <h4 className="text-sm font-medium text-foreground">Items</h4>
               <Button variant="outline" size="sm" onClick={addItem}><Plus size={14} className="mr-1" /> Add Item</Button>
             </div>
-
             {items.map((item, idx) => (
               <div key={idx} className="grid grid-cols-2 sm:grid-cols-8 gap-2 items-end">
                 <div className="col-span-2 sm:col-span-2 flex gap-1">
-                  <select
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
-                    value={item.productId}
-                    onChange={e => updateItem(idx, 'productId', e.target.value)}
-                  >
+                  <select className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm" value={item.productId} onChange={e => updateItem(idx, 'productId', e.target.value)}>
                     <option value="">Select Product</option>
                     {products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.brandName})</option>)}
                   </select>

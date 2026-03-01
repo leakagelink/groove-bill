@@ -1,21 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { store } from '@/lib/store';
-import { Purchase, PurchaseItem } from '@/types/billing';
+import { Purchase, PurchaseItem, Supplier, Product } from '@/types/billing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Search, Edit } from 'lucide-react';
 
 export default function PurchaseMaster() {
-  const [purchases, setPurchases] = useState<Purchase[]>(store.getPurchases());
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const suppliers = store.getSuppliers();
-  const products = store.getProducts();
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
 
   const [supplierId, setSupplierId] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [items, setItems] = useState<PurchaseItem[]>([]);
+
+  const loadData = async () => {
+    const [pu, su, pr] = await Promise.all([store.getPurchases(), store.getSuppliers(), store.getProducts()]);
+    setPurchases(pu); setSuppliers(su); setProducts(pr);
+  };
+  useEffect(() => { loadData(); }, []);
 
   const addItem = () => {
     setItems([...items, { productId: '', productName: '', category: '', quantity: 1, price: 0, total: 0 }]);
@@ -24,14 +30,9 @@ export default function PurchaseMaster() {
   const updateItem = (idx: number, field: string, value: string | number) => {
     const updated = [...items];
     const item = { ...updated[idx], [field]: value };
-
     if (field === 'productId') {
       const product = products.find(p => p.id === value);
-      if (product) {
-        item.productName = product.name;
-        item.category = product.category;
-        item.price = product.price;
-      }
+      if (product) { item.productName = product.name; item.category = product.category; item.price = product.price; }
     }
     item.total = item.quantity * item.price;
     updated[idx] = item;
@@ -41,35 +42,22 @@ export default function PurchaseMaster() {
   const removeItem = (idx: number) => setItems(items.filter((_, i) => i !== idx));
 
   const editPurchase = (p: Purchase) => {
-    setEditId(p.id);
-    setSupplierId(p.supplierId);
-    setDate(p.date);
-    setItems([...p.items]);
-    setShowForm(true);
+    setEditId(p.id); setSupplierId(p.supplierId); setDate(p.date); setItems([...p.items]); setShowForm(true);
   };
 
-  const save = () => {
+  const save = async () => {
     if (!supplierId || items.length === 0) return;
     const supplier = suppliers.find(s => s.id === supplierId);
-    const purchase: Purchase = {
-      id: editId || crypto.randomUUID(),
-      supplierId,
-      supplierName: supplier?.name || '',
-      date,
-      items,
+    await store.savePurchase({
+      id: editId || undefined,
+      supplierId, supplierName: supplier?.name || '', date, items,
       totalAmount: items.reduce((sum, i) => sum + i.total, 0),
-    };
-    store.savePurchase(purchase);
-    setPurchases(store.getPurchases());
-    setShowForm(false);
-    setEditId(null);
-    setSupplierId('');
-    setItems([]);
+    } as Purchase);
+    await loadData();
+    setShowForm(false); setEditId(null); setSupplierId(''); setItems([]);
   };
 
-  const filtered = purchases.filter(p =>
-    p.supplierName.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = purchases.filter(p => p.supplierName.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="space-y-6">
@@ -84,11 +72,7 @@ export default function PurchaseMaster() {
         <div className="bg-card rounded-lg border p-5 space-y-4">
           <h3 className="font-semibold text-foreground">{editId ? 'Edit Purchase' : 'New Purchase'}</h3>
           <div className="grid sm:grid-cols-2 gap-3">
-            <select
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              value={supplierId}
-              onChange={e => setSupplierId(e.target.value)}
-            >
+            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={supplierId} onChange={e => setSupplierId(e.target.value)}>
               <option value="">Select Supplier *</option>
               {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
@@ -102,11 +86,7 @@ export default function PurchaseMaster() {
             </div>
             {items.map((item, idx) => (
               <div key={idx} className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end">
-                <select
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm col-span-2 sm:col-span-1"
-                  value={item.productId}
-                  onChange={e => updateItem(idx, 'productId', e.target.value)}
-                >
+                <select className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm col-span-2 sm:col-span-1" value={item.productId} onChange={e => updateItem(idx, 'productId', e.target.value)}>
                   <option value="">Product</option>
                   {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
@@ -119,9 +99,7 @@ export default function PurchaseMaster() {
           </div>
 
           <div className="flex items-center justify-between pt-3 border-t">
-            <span className="font-semibold text-foreground">
-              Total: ₹{items.reduce((s, i) => s + i.total, 0).toLocaleString('en-IN')}
-            </span>
+            <span className="font-semibold text-foreground">Total: ₹{items.reduce((s, i) => s + i.total, 0).toLocaleString('en-IN')}</span>
             <div className="flex gap-3">
               <Button onClick={save}>{editId ? 'Update' : 'Save'} Purchase</Button>
               <Button variant="outline" onClick={() => { setShowForm(false); setEditId(null); }}>Cancel</Button>
