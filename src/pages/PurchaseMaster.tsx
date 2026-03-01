@@ -4,6 +4,7 @@ import { Purchase, PurchaseItem, Supplier, Product } from '@/types/billing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Search, Edit } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PurchaseMaster() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -12,14 +13,20 @@ export default function PurchaseMaster() {
   const [editId, setEditId] = useState<string | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   const [supplierId, setSupplierId] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [items, setItems] = useState<PurchaseItem[]>([]);
 
   const loadData = async () => {
-    const [pu, su, pr] = await Promise.all([store.getPurchases(), store.getSuppliers(), store.getProducts()]);
-    setPurchases(pu); setSuppliers(su); setProducts(pr);
+    try {
+      const [pu, su, pr] = await Promise.all([store.getPurchases(), store.getSuppliers(), store.getProducts()]);
+      setPurchases(pu); setSuppliers(su); setProducts(pr);
+    } catch (e: any) {
+      toast({ title: 'Error loading data', description: e.message, variant: 'destructive' });
+    }
   };
   useEffect(() => { loadData(); }, []);
 
@@ -47,14 +54,22 @@ export default function PurchaseMaster() {
 
   const save = async () => {
     if (!supplierId || items.length === 0) return;
-    const supplier = suppliers.find(s => s.id === supplierId);
-    await store.savePurchase({
-      id: editId || undefined,
-      supplierId, supplierName: supplier?.name || '', date, items,
-      totalAmount: items.reduce((sum, i) => sum + i.total, 0),
-    } as Purchase);
-    await loadData();
-    setShowForm(false); setEditId(null); setSupplierId(''); setItems([]);
+    setLoading(true);
+    try {
+      const supplier = suppliers.find(s => s.id === supplierId);
+      await store.savePurchase({
+        id: editId || undefined,
+        supplierId, supplierName: supplier?.name || '', date, items,
+        totalAmount: items.reduce((sum, i) => sum + i.total, 0),
+      } as Purchase);
+      await loadData();
+      setShowForm(false); setEditId(null); setSupplierId(''); setItems([]);
+      toast({ title: editId ? 'Purchase updated!' : 'Purchase saved!' });
+    } catch (e: any) {
+      toast({ title: 'Error saving purchase', description: e.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filtered = purchases.filter(p => p.supplierName.toLowerCase().includes(search.toLowerCase()));
@@ -101,7 +116,7 @@ export default function PurchaseMaster() {
           <div className="flex items-center justify-between pt-3 border-t">
             <span className="font-semibold text-foreground">Total: ₹{items.reduce((s, i) => s + i.total, 0).toLocaleString('en-IN')}</span>
             <div className="flex gap-3">
-              <Button onClick={save}>{editId ? 'Update' : 'Save'} Purchase</Button>
+              <Button onClick={save} disabled={loading}>{editId ? 'Update' : 'Save'} Purchase</Button>
               <Button variant="outline" onClick={() => { setShowForm(false); setEditId(null); }}>Cancel</Button>
             </div>
           </div>

@@ -12,10 +12,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     const load = async () => {
-      const [p, b, s, pu, sa] = await Promise.all([
-        store.getProducts(), store.getBrands(), store.getSuppliers(), store.getPurchases(), store.getSales()
-      ]);
-      setProducts(p); setBrands(b); setSuppliers(s); setPurchases(pu); setSales(sa);
+      try {
+        const [p, b, s, pu, sa] = await Promise.all([
+          store.getProducts(), store.getBrands(), store.getSuppliers(), store.getPurchases(), store.getSales()
+        ]);
+        setProducts(p); setBrands(b); setSuppliers(s); setPurchases(pu); setSales(sa);
+      } catch (e) {
+        console.error('Dashboard load error:', e);
+      }
     };
     load();
   }, []);

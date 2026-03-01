@@ -4,6 +4,7 @@ import { Supplier } from '@/types/billing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Search, Edit } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const empty: Omit<Supplier, 'id'> = { name: '', phone: '', email: '', address: '', gstNumber: '' };
 
@@ -13,22 +14,43 @@ export default function SupplierMaster() {
   const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-  const loadSuppliers = async () => setSuppliers(await store.getSuppliers());
+  const loadSuppliers = async () => {
+    try {
+      setSuppliers(await store.getSuppliers());
+    } catch (e: any) {
+      toast({ title: 'Error loading suppliers', description: e.message, variant: 'destructive' });
+    }
+  };
   useEffect(() => { loadSuppliers(); }, []);
 
   const save = async () => {
     if (!form.name.trim()) return;
-    await store.saveSupplier({ id: editId || undefined, ...form } as Supplier);
-    await loadSuppliers();
-    setForm(empty);
-    setEditId(null);
-    setShowForm(false);
+    setLoading(true);
+    try {
+      await store.saveSupplier({ id: editId || undefined, ...form } as Supplier);
+      await loadSuppliers();
+      setForm(empty);
+      setEditId(null);
+      setShowForm(false);
+      toast({ title: editId ? 'Supplier updated!' : 'Supplier added!' });
+    } catch (e: any) {
+      toast({ title: 'Error saving supplier', description: e.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const remove = async (id: string) => {
-    await store.deleteSupplier(id);
-    await loadSuppliers();
+    try {
+      await store.deleteSupplier(id);
+      await loadSuppliers();
+      toast({ title: 'Supplier deleted!' });
+    } catch (e: any) {
+      toast({ title: 'Error deleting supplier', description: e.message, variant: 'destructive' });
+    }
   };
 
   const edit = (s: Supplier) => {
@@ -63,7 +85,7 @@ export default function SupplierMaster() {
             <Input placeholder="Address" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className="sm:col-span-2" />
           </div>
           <div className="flex gap-3">
-            <Button onClick={save}>{editId ? 'Update' : 'Save'}</Button>
+            <Button onClick={save} disabled={loading}>{editId ? 'Update' : 'Save'}</Button>
             <Button variant="outline" onClick={() => { setShowForm(false); setEditId(null); setForm(empty); }}>Cancel</Button>
           </div>
         </div>

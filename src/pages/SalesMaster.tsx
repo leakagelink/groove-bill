@@ -4,6 +4,7 @@ import { Sale, SaleItem, Customer, Product } from '@/types/billing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Search, Printer, Pencil, Check, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import BillPrint from '@/components/BillPrint';
 
 export default function SalesMaster() {
@@ -11,6 +12,8 @@ export default function SalesMaster() {
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   // Edit product state
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -32,8 +35,12 @@ export default function SalesMaster() {
   const [pendingSale, setPendingSale] = useState<Sale | null>(null);
 
   const loadData = async () => {
-    const [s, p] = await Promise.all([store.getSales(), store.getProducts()]);
-    setSales(s); setProducts(p);
+    try {
+      const [s, p] = await Promise.all([store.getSales(), store.getProducts()]);
+      setSales(s); setProducts(p);
+    } catch (e: any) {
+      toast({ title: 'Error loading data', description: e.message, variant: 'destructive' });
+    }
   };
   useEffect(() => { loadData(); }, []);
 
@@ -74,20 +81,25 @@ export default function SalesMaster() {
 
   const saveEditProduct = async () => {
     if (!editingProduct) return;
-    const updated: Product = { ...editingProduct, name: editName, price: editPrice, discount: editDiscount };
-    await store.saveProduct(updated);
-    setProducts(await store.getProducts());
-    setItems(items.map(item => {
-      if (item.productId === updated.id) {
-        const newItem = { ...item, productName: updated.name, price: updated.price, discount: updated.discount };
-        const subtotal = newItem.quantity * newItem.price;
-        newItem.discountAmount = (subtotal * newItem.discount) / 100;
-        newItem.total = subtotal - newItem.discountAmount;
-        return newItem;
-      }
-      return item;
-    }));
-    setEditingProduct(null);
+    try {
+      const updated: Product = { ...editingProduct, name: editName, price: editPrice, discount: editDiscount };
+      await store.saveProduct(updated);
+      setProducts(await store.getProducts());
+      setItems(items.map(item => {
+        if (item.productId === updated.id) {
+          const newItem = { ...item, productName: updated.name, price: updated.price, discount: updated.discount };
+          const subtotal = newItem.quantity * newItem.price;
+          newItem.discountAmount = (subtotal * newItem.discount) / 100;
+          newItem.total = subtotal - newItem.discountAmount;
+          return newItem;
+        }
+        return item;
+      }));
+      setEditingProduct(null);
+      toast({ title: 'Product updated!' });
+    } catch (e: any) {
+      toast({ title: 'Error updating product', description: e.message, variant: 'destructive' });
+    }
   };
 
   const totalAmount = items.reduce((s, i) => s + (i.quantity * i.price), 0);
@@ -96,26 +108,33 @@ export default function SalesMaster() {
 
   const save = async () => {
     if (!customerName.trim() || items.length === 0) return;
+    setLoading(true);
+    try {
+      const customerId = await store.saveCustomer({
+        name: customerName, phone: customerPhone, address: customerAddress,
+      } as Customer);
 
-    const customerId = await store.saveCustomer({
-      name: customerName, phone: customerPhone, address: customerAddress,
-    } as Customer);
+      const invoiceNumber = await store.getNextInvoiceNumber();
+      const sale: Sale = {
+        id: crypto.randomUUID(),
+        invoiceNumber,
+        customerId: customerId,
+        customerName, customerPhone, date, items,
+        totalAmount, totalDiscount, finalAmount,
+      };
+      await store.saveSale(sale);
+      setSales(await store.getSales());
 
-    const invoiceNumber = await store.getNextInvoiceNumber();
-    const sale: Sale = {
-      id: crypto.randomUUID(),
-      invoiceNumber,
-      customerId: customerId,
-      customerName, customerPhone, date, items,
-      totalAmount, totalDiscount, finalAmount,
-    };
-    await store.saveSale(sale);
-    setSales(await store.getSales());
-
-    setPendingSale(sale);
-    setShowPrintDialog(true);
-    setShowForm(false);
-    setCustomerName(''); setCustomerPhone(''); setCustomerAddress(''); setItems([]);
+      setPendingSale(sale);
+      setShowPrintDialog(true);
+      setShowForm(false);
+      setCustomerName(''); setCustomerPhone(''); setCustomerAddress(''); setItems([]);
+      toast({ title: 'Sale saved successfully!' });
+    } catch (e: any) {
+      toast({ title: 'Error saving sale', description: e.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePrint = (withPrice: boolean) => {
@@ -239,7 +258,7 @@ export default function SalesMaster() {
           </div>
 
           <div className="flex gap-3">
-            <Button onClick={save}>Save & Print</Button>
+            <Button onClick={save} disabled={loading}>Save & Print</Button>
             <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
           </div>
         </div>
