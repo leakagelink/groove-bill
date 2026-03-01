@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { store } from '@/lib/store';
-import { Sale, SaleItem, Customer, Product } from '@/types/billing';
+import { Sale, SaleItem, Customer, Product, Brand } from '@/types/billing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Search, Printer, Pencil, Check, X } from 'lucide-react';
@@ -35,15 +35,47 @@ export default function SalesMaster() {
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [pendingSale, setPendingSale] = useState<Sale | null>(null);
 
+  // Add new product state
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [newProdName, setNewProdName] = useState('');
+  const [newProdCategory, setNewProdCategory] = useState('');
+  const [newProdBrandId, setNewProdBrandId] = useState('');
+  const [newProdBrandName, setNewProdBrandName] = useState('');
+  const [newProdPrice, setNewProdPrice] = useState(0);
+  const [newProdDiscount, setNewProdDiscount] = useState(0);
+
   const loadData = async () => {
     try {
-      const [s, p] = await Promise.all([store.getSales(), store.getProducts()]);
-      setSales(s); setProducts(p);
+      const [s, p, b] = await Promise.all([store.getSales(), store.getProducts(), store.getBrands()]);
+      setSales(s); setProducts(p); setBrands(b);
     } catch (e: any) {
       toast({ title: 'Error loading data', description: e.message, variant: 'destructive' });
     }
   };
   useEffect(() => { loadData(); }, []);
+
+  const openAddProduct = () => {
+    setNewProdName(''); setNewProdCategory(''); setNewProdBrandId(''); setNewProdBrandName('');
+    setNewProdPrice(0); setNewProdDiscount(0); setShowAddProduct(true);
+  };
+
+  const saveNewProduct = async () => {
+    if (!newProdName.trim()) { toast({ title: 'Product name is required', variant: 'destructive' }); return; }
+    try {
+      const brand = brands.find(b => b.id === newProdBrandId);
+      await store.saveProduct({
+        name: newProdName, category: newProdCategory,
+        brandId: newProdBrandId, brandName: brand?.name || newProdBrandName,
+        price: newProdPrice, discount: newProdDiscount,
+      });
+      setProducts(await store.getProducts());
+      setShowAddProduct(false);
+      toast({ title: 'Product added!' });
+    } catch (e: any) {
+      toast({ title: 'Error adding product', description: e.message, variant: 'destructive' });
+    }
+  };
 
   const addItem = () => {
     setItems([...items, { productId: '', productName: '', brandName: '', quantity: 1, price: 0, discount: 0, discountAmount: 0, total: 0 }]);
@@ -230,6 +262,31 @@ export default function SalesMaster() {
         </div>
       )}
 
+      {showAddProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30">
+          <div className="bg-card rounded-lg border p-6 max-w-sm w-full mx-4 space-y-4">
+            <h3 className="font-semibold text-foreground text-lg">Add New Product</h3>
+            <div className="space-y-3">
+              <div><label className="text-sm text-muted-foreground">Product Name *</label><Input value={newProdName} onChange={e => setNewProdName(e.target.value)} /></div>
+              <div><label className="text-sm text-muted-foreground">Category</label><Input value={newProdCategory} onChange={e => setNewProdCategory(e.target.value)} /></div>
+              <div>
+                <label className="text-sm text-muted-foreground">Brand</label>
+                <select className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm" value={newProdBrandId} onChange={e => setNewProdBrandId(e.target.value)}>
+                  <option value="">Select Brand</option>
+                  {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </div>
+              <div><label className="text-sm text-muted-foreground">Price (₹)</label><Input type="number" value={newProdPrice || ''} onChange={e => setNewProdPrice(parseFloat(e.target.value) || 0)} /></div>
+              <div><label className="text-sm text-muted-foreground">Discount (%)</label><Input type="number" value={newProdDiscount || ''} onChange={e => setNewProdDiscount(parseFloat(e.target.value) || 0)} /></div>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={saveNewProduct}><Check size={14} className="mr-1" /> Save</Button>
+              <Button variant="outline" onClick={() => setShowAddProduct(false)}><X size={14} className="mr-1" /> Cancel</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Sales Master</h1>
         <Button onClick={() => { resetForm(); setShowForm(true); }}><Plus size={16} className="mr-1" /> New Sale</Button>
@@ -248,7 +305,10 @@ export default function SalesMaster() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-medium text-foreground">Items</h4>
-              <Button variant="outline" size="sm" onClick={addItem}><Plus size={14} className="mr-1" /> Add Item</Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={openAddProduct}><Plus size={14} className="mr-1" /> New Product</Button>
+                <Button variant="outline" size="sm" onClick={addItem}><Plus size={14} className="mr-1" /> Add Item</Button>
+              </div>
             </div>
             {items.map((item, idx) => (
               <div key={idx} className="grid grid-cols-2 sm:grid-cols-8 gap-2 items-end">
