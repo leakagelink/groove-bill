@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { store } from '@/lib/store';
 import { Supplier } from '@/types/billing';
 import { Button } from '@/components/ui/button';
@@ -8,25 +8,27 @@ import { Plus, Trash2, Search, Edit } from 'lucide-react';
 const empty: Omit<Supplier, 'id'> = { name: '', phone: '', email: '', address: '', gstNumber: '' };
 
 export default function SupplierMaster() {
-  const [suppliers, setSuppliers] = useState<Supplier[]>(store.getSuppliers());
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [form, setForm] = useState(empty);
   const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
 
-  const save = () => {
+  const loadSuppliers = async () => setSuppliers(await store.getSuppliers());
+  useEffect(() => { loadSuppliers(); }, []);
+
+  const save = async () => {
     if (!form.name.trim()) return;
-    const supplier: Supplier = { id: editId || crypto.randomUUID(), ...form };
-    store.saveSupplier(supplier);
-    setSuppliers(store.getSuppliers());
+    await store.saveSupplier({ id: editId || undefined, ...form } as Supplier);
+    await loadSuppliers();
     setForm(empty);
     setEditId(null);
     setShowForm(false);
   };
 
-  const remove = (id: string) => {
-    store.deleteSupplier(id);
-    setSuppliers(store.getSuppliers());
+  const remove = async (id: string) => {
+    await store.deleteSupplier(id);
+    await loadSuppliers();
   };
 
   const edit = (s: Supplier) => {

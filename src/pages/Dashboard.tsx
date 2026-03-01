@@ -1,12 +1,24 @@
+import { useEffect, useState } from 'react';
 import { store } from '@/lib/store';
 import { Package, Tags, Truck, ShoppingCart, Receipt } from 'lucide-react';
+import { Product, Brand, Supplier, Purchase, Sale } from '@/types/billing';
 
 export default function Dashboard() {
-  const products = store.getProducts();
-  const brands = store.getBrands();
-  const suppliers = store.getSuppliers();
-  const purchases = store.getPurchases();
-  const sales = store.getSales();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      const [p, b, s, pu, sa] = await Promise.all([
+        store.getProducts(), store.getBrands(), store.getSuppliers(), store.getPurchases(), store.getSales()
+      ]);
+      setProducts(p); setBrands(b); setSuppliers(s); setPurchases(pu); setSales(sa);
+    };
+    load();
+  }, []);
 
   const stats = [
     { label: 'Products', value: products.length, icon: Package, color: 'bg-primary/10 text-primary' },

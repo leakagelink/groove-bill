@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { store } from '@/lib/store';
-import { Product } from '@/types/billing';
+import { Product, Brand } from '@/types/billing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Search, Edit, PlusCircle } from 'lucide-react';
@@ -9,44 +9,51 @@ import { useToast } from '@/hooks/use-toast';
 const empty: Omit<Product, 'id'> = { name: '', category: '', brandId: '', brandName: '', price: 0, discount: 0 };
 
 export default function ProductMaster() {
-  const [products, setProducts] = useState<Product[]>(store.getProducts());
+  const [products, setProducts] = useState<Product[]>([]);
   const [form, setForm] = useState(empty);
   const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [brands, setBrands] = useState(store.getBrands());
+  const [brands, setBrands] = useState<Brand[]>([]);
   const [showNewBrand, setShowNewBrand] = useState(false);
   const [newBrandName, setNewBrandName] = useState('');
   const { toast } = useToast();
 
-  const addNewBrand = () => {
+  const loadData = async () => {
+    const [p, b] = await Promise.all([store.getProducts(), store.getBrands()]);
+    setProducts(p);
+    setBrands(b);
+  };
+  useEffect(() => { loadData(); }, []);
+
+  const addNewBrand = async () => {
     if (!newBrandName.trim()) return;
-    const brand = { id: crypto.randomUUID(), name: newBrandName.trim() };
-    store.saveBrand(brand);
-    setBrands(store.getBrands());
-    setForm({ ...form, brandId: brand.id });
+    const brandId = await store.saveBrand({ name: newBrandName.trim() } as Brand);
+    const updatedBrands = await store.getBrands();
+    setBrands(updatedBrands);
+    setForm({ ...form, brandId: brandId });
     setNewBrandName('');
     setShowNewBrand(false);
-    toast({ title: `Brand "${brand.name}" added!` });
+    toast({ title: `Brand "${newBrandName.trim()}" added!` });
   };
-  const save = () => {
+
+  const save = async () => {
     if (!form.name.trim()) return;
     const brand = brands.find(b => b.id === form.brandId);
-    const product: Product = {
-      id: editId || crypto.randomUUID(),
+    await store.saveProduct({
+      id: editId || undefined,
       ...form,
       brandName: brand?.name || form.brandName,
-    };
-    store.saveProduct(product);
-    setProducts(store.getProducts());
+    } as Product);
+    await loadData();
     setForm(empty);
     setEditId(null);
     setShowForm(false);
   };
 
-  const remove = (id: string) => {
-    store.deleteProduct(id);
-    setProducts(store.getProducts());
+  const remove = async (id: string) => {
+    await store.deleteProduct(id);
+    await loadData();
   };
 
   const edit = (p: Product) => {
