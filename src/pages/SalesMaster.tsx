@@ -1,17 +1,24 @@
 import { useState } from 'react';
 import { store } from '@/lib/store';
-import { Sale, SaleItem, Customer } from '@/types/billing';
+import { Sale, SaleItem, Customer, Product } from '@/types/billing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, Search, Printer } from 'lucide-react';
+import { Plus, Trash2, Search, Printer, Pencil, Check, X } from 'lucide-react';
 import BillPrint from '@/components/BillPrint';
 
 export default function SalesMaster() {
   const [sales, setSales] = useState<Sale[]>(store.getSales());
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const products = store.getProducts();
+  const [productsList, setProductsList] = useState(store.getProducts());
+  const products = productsList;
   const existingCustomers = store.getCustomers();
+
+  // Edit product state
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editPrice, setEditPrice] = useState(0);
+  const [editDiscount, setEditDiscount] = useState(0);
 
   // Customer fields
   const [customerName, setCustomerName] = useState('');
@@ -52,6 +59,35 @@ export default function SalesMaster() {
   };
 
   const removeItem = (idx: number) => setItems(items.filter((_, i) => i !== idx));
+
+  const startEditProduct = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      setEditingProduct(product);
+      setEditName(product.name);
+      setEditPrice(product.price);
+      setEditDiscount(product.discount);
+    }
+  };
+
+  const saveEditProduct = () => {
+    if (!editingProduct) return;
+    const updated: Product = { ...editingProduct, name: editName, price: editPrice, discount: editDiscount };
+    store.saveProduct(updated);
+    setProductsList(store.getProducts());
+    // Update current sale items that use this product
+    setItems(items.map(item => {
+      if (item.productId === updated.id) {
+        const newItem = { ...item, productName: updated.name, price: updated.price, discount: updated.discount };
+        const subtotal = newItem.quantity * newItem.price;
+        newItem.discountAmount = (subtotal * newItem.discount) / 100;
+        newItem.total = subtotal - newItem.discountAmount;
+        return newItem;
+      }
+      return item;
+    }));
+    setEditingProduct(null);
+  };
 
   const totalAmount = items.reduce((s, i) => s + (i.quantity * i.price), 0);
   const totalDiscount = items.reduce((s, i) => s + i.discountAmount, 0);
@@ -165,6 +201,33 @@ export default function SalesMaster() {
         <BillPrint sale={printSale} showPrice={printWithPrice} onClose={() => setPrintSale(null)} />
       )}
 
+      {/* Edit product modal */}
+      {editingProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30">
+          <div className="bg-card rounded-lg border p-6 max-w-sm w-full mx-4 space-y-4">
+            <h3 className="font-semibold text-foreground text-lg">Edit Product</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm text-muted-foreground">Product Name</label>
+                <Input value={editName} onChange={e => setEditName(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground">Price (₹)</label>
+                <Input type="number" value={editPrice || ''} onChange={e => setEditPrice(parseFloat(e.target.value) || 0)} />
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground">Discount (%)</label>
+                <Input type="number" value={editDiscount || ''} onChange={e => setEditDiscount(parseFloat(e.target.value) || 0)} />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={saveEditProduct}><Check size={14} className="mr-1" /> Save</Button>
+              <Button variant="outline" onClick={() => setEditingProduct(null)}><X size={14} className="mr-1" /> Cancel</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Sales Master</h1>
         <Button onClick={() => { setShowForm(true); setItems([]); }}>
@@ -190,15 +253,22 @@ export default function SalesMaster() {
             </div>
 
             {items.map((item, idx) => (
-              <div key={idx} className="grid grid-cols-2 sm:grid-cols-7 gap-2 items-end">
-                <select
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm col-span-2 sm:col-span-2"
-                  value={item.productId}
-                  onChange={e => updateItem(idx, 'productId', e.target.value)}
-                >
-                  <option value="">Select Product</option>
-                  {products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.brandName})</option>)}
-                </select>
+              <div key={idx} className="grid grid-cols-2 sm:grid-cols-8 gap-2 items-end">
+                <div className="col-span-2 sm:col-span-2 flex gap-1">
+                  <select
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
+                    value={item.productId}
+                    onChange={e => updateItem(idx, 'productId', e.target.value)}
+                  >
+                    <option value="">Select Product</option>
+                    {products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.brandName})</option>)}
+                  </select>
+                  {item.productId && (
+                    <Button variant="ghost" size="sm" className="h-9 px-2 shrink-0" onClick={() => startEditProduct(item.productId)} title="Edit Product">
+                      <Pencil size={13} className="text-primary" />
+                    </Button>
+                  )}
+                </div>
                 <Input type="number" placeholder="Qty" className="h-9" value={item.quantity} onChange={e => updateItem(idx, 'quantity', parseInt(e.target.value) || 0)} />
                 <Input type="number" placeholder="Price" className="h-9" value={item.price || ''} onChange={e => updateItem(idx, 'price', parseFloat(e.target.value) || 0)} />
                 <Input type="number" placeholder="Disc %" className="h-9" value={item.discount || ''} onChange={e => updateItem(idx, 'discount', parseFloat(e.target.value) || 0)} />
