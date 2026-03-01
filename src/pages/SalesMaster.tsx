@@ -11,6 +11,7 @@ export default function SalesMaster() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -106,6 +107,23 @@ export default function SalesMaster() {
   const totalDiscount = items.reduce((s, i) => s + i.discountAmount, 0);
   const finalAmount = items.reduce((s, i) => s + i.total, 0);
 
+  const startEditSale = (sale: Sale) => {
+    setEditingSale(sale);
+    setCustomerName(sale.customerName);
+    setCustomerPhone(sale.customerPhone);
+    setCustomerAddress('');
+    setDate(sale.date);
+    setItems(sale.items.map(i => ({ ...i })));
+    setShowForm(true);
+  };
+
+  const resetForm = () => {
+    setShowForm(false);
+    setEditingSale(null);
+    setCustomerName(''); setCustomerPhone(''); setCustomerAddress(''); setItems([]);
+    setDate(new Date().toISOString().split('T')[0]);
+  };
+
   const save = async () => {
     if (!customerName.trim() || items.length === 0) return;
     setLoading(true);
@@ -114,9 +132,13 @@ export default function SalesMaster() {
         name: customerName, phone: customerPhone, address: customerAddress,
       } as Customer);
 
-      const invoiceNumber = await store.getNextInvoiceNumber();
+      let invoiceNumber = editingSale?.invoiceNumber || '';
+      if (!editingSale) {
+        invoiceNumber = await store.getNextInvoiceNumber();
+      }
+
       const sale: Sale = {
-        id: crypto.randomUUID(),
+        id: editingSale?.id || crypto.randomUUID(),
         invoiceNumber,
         customerId: customerId,
         customerName, customerPhone, date, items,
@@ -127,9 +149,8 @@ export default function SalesMaster() {
 
       setPendingSale(sale);
       setShowPrintDialog(true);
-      setShowForm(false);
-      setCustomerName(''); setCustomerPhone(''); setCustomerAddress(''); setItems([]);
-      toast({ title: 'Sale saved successfully!' });
+      resetForm();
+      toast({ title: editingSale ? 'Sale updated successfully!' : 'Sale saved successfully!' });
     } catch (e: any) {
       toast({ title: 'Error saving sale', description: e.message, variant: 'destructive' });
     } finally {
@@ -211,12 +232,12 @@ export default function SalesMaster() {
 
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Sales Master</h1>
-        <Button onClick={() => { setShowForm(true); setItems([]); }}><Plus size={16} className="mr-1" /> New Sale</Button>
+        <Button onClick={() => { resetForm(); setShowForm(true); }}><Plus size={16} className="mr-1" /> New Sale</Button>
       </div>
 
       {showForm && (
         <div className="bg-card rounded-lg border p-5 space-y-4">
-          <h3 className="font-semibold text-foreground">New Sale</h3>
+          <h3 className="font-semibold text-foreground">{editingSale ? `Edit Sale - ${editingSale.invoiceNumber}` : 'New Sale'}</h3>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Input placeholder="Customer Name *" value={customerName} onChange={e => setCustomerName(e.target.value)} />
             <Input placeholder="Phone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
@@ -258,8 +279,8 @@ export default function SalesMaster() {
           </div>
 
           <div className="flex gap-3">
-            <Button onClick={save} disabled={loading}>Save & Print</Button>
-            <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+            <Button onClick={save} disabled={loading}>{editingSale ? 'Update Sale' : 'Save & Print'}</Button>
+            <Button variant="outline" onClick={resetForm}>Cancel</Button>
           </div>
         </div>
       )}
@@ -293,6 +314,7 @@ export default function SalesMaster() {
                   <td className="p-3 text-right text-destructive">₹{s.totalDiscount.toLocaleString('en-IN')}</td>
                   <td className="p-3 text-right font-medium text-foreground">₹{s.finalAmount.toLocaleString('en-IN')}</td>
                   <td className="p-3 text-right">
+                    <Button variant="ghost" size="sm" onClick={() => startEditSale(s)} title="Edit Sale"><Pencil size={14} /></Button>
                     <Button variant="ghost" size="sm" onClick={() => handlePrintFromList(s)}><Printer size={14} /></Button>
                     <Button variant="ghost" size="sm" onClick={() => shareWhatsApp(s)}>WA</Button>
                   </td>
