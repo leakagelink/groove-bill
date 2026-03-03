@@ -107,6 +107,10 @@ export const store = {
     if (error) throw error;
     return data.id;
   },
+  deletePurchase: async (id: string) => {
+    const { error } = await supabase.from('purchases').delete().eq('id', id);
+    if (error) throw error;
+  },
 
   // Customers
   getCustomers: async (): Promise<Customer[]> => {
