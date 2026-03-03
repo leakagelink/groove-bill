@@ -288,8 +288,8 @@ export default function SalesMaster() {
       )}
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Sales Master</h1>
-        <Button onClick={() => { resetForm(); setShowForm(true); }}><Plus size={16} className="mr-1" /> New Sale</Button>
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Sales Master</h1>
+        <Button size="sm" onClick={() => { resetForm(); setShowForm(true); }}><Plus size={16} className="mr-1" /> New Sale</Button>
       </div>
 
       {showForm && (
@@ -311,7 +311,7 @@ export default function SalesMaster() {
               </div>
             </div>
             {items.map((item, idx) => (
-              <div key={idx} className="grid grid-cols-2 sm:grid-cols-8 gap-2 items-end">
+              <div key={idx} className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-8 gap-2 items-end border-b pb-3 sm:border-0 sm:pb-0">
                 <div className="col-span-2 sm:col-span-2 flex gap-1">
                   <select className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm" value={item.productId} onChange={e => updateItem(idx, 'productId', e.target.value)}>
                     <option value="">Select Product</option>
@@ -323,11 +323,15 @@ export default function SalesMaster() {
                     </Button>
                   )}
                 </div>
-                <Input type="number" placeholder="Qty" className="h-9" value={item.quantity} onChange={e => updateItem(idx, 'quantity', parseInt(e.target.value) || 0)} />
-                <Input type="number" placeholder="Price" className="h-9" value={item.price || ''} onChange={e => updateItem(idx, 'price', parseFloat(e.target.value) || 0)} />
-                <Input type="number" placeholder="Disc %" className="h-9" value={item.discount || ''} onChange={e => updateItem(idx, 'discount', parseFloat(e.target.value) || 0)} />
-                <div className="text-sm font-medium text-foreground flex items-center h-9">₹{item.total.toLocaleString('en-IN')}</div>
-                <Button variant="ghost" size="sm" onClick={() => removeItem(idx)}><Trash2 size={14} className="text-destructive" /></Button>
+                <div className="grid grid-cols-4 gap-2 sm:contents">
+                  <Input type="number" placeholder="Qty" className="h-9" value={item.quantity} onChange={e => updateItem(idx, 'quantity', parseInt(e.target.value) || 0)} />
+                  <Input type="number" placeholder="Price" className="h-9" value={item.price || ''} onChange={e => updateItem(idx, 'price', parseFloat(e.target.value) || 0)} />
+                  <Input type="number" placeholder="Disc %" className="h-9" value={item.discount || ''} onChange={e => updateItem(idx, 'discount', parseFloat(e.target.value) || 0)} />
+                  <div className="flex items-center justify-between h-9">
+                    <span className="text-sm font-medium text-foreground">₹{item.total.toLocaleString('en-IN')}</span>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 sm:h-auto sm:w-auto sm:p-2" onClick={() => removeItem(idx)}><Trash2 size={14} className="text-destructive" /></Button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -353,7 +357,33 @@ export default function SalesMaster() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          {/* Mobile card view */}
+          <div className="divide-y sm:hidden">
+            {filtered.length === 0 && <p className="p-4 text-sm text-muted-foreground">No sales found</p>}
+            {filtered.map(s => (
+              <div key={s.id} className="p-3 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-sm text-primary">{s.invoiceNumber}</span>
+                  <span className="text-xs text-muted-foreground">{new Date(s.date).toLocaleDateString('en-IN')}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-foreground text-sm">{s.customerName}</span>
+                  <span className="font-medium text-foreground text-sm">₹{s.finalAmount.toLocaleString('en-IN')}</span>
+                </div>
+                {s.totalDiscount > 0 && (
+                  <div className="text-xs text-muted-foreground">Discount: ₹{s.totalDiscount.toLocaleString('en-IN')}</div>
+                )}
+                <div className="flex gap-1 pt-1">
+                  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => startEditSale(s)}><Pencil size={12} className="mr-1" /> Edit</Button>
+                  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handlePrintFromList(s)}><Printer size={12} className="mr-1" /> Print</Button>
+                  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => shareWhatsApp(s)}>WA</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table view */}
+          <table className="w-full text-sm hidden sm:table">
             <thead><tr className="border-b bg-muted/50">
               <th className="text-left p-3 font-medium text-muted-foreground">Invoice</th>
               <th className="text-left p-3 font-medium text-muted-foreground">Date</th>

@@ -89,10 +89,22 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
+    -webkit-tap-highlight-color: transparent;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold tracking-tight;
+  }
+
+  /* Better touch targets on mobile */
+  @media (max-width: 640px) {
+    button, [role="button"], a {
+      min-height: 36px;
+    }
+    
+    input, select, textarea {
+      font-size: 16px !important; /* Prevents iOS zoom on focus */
+    }
   }
 }
 

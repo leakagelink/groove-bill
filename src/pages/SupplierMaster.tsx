@@ -66,10 +66,10 @@ export default function SupplierMaster() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Supplier Master</h1>
-        <Button onClick={() => { setShowForm(true); setEditId(null); setForm(empty); }}>
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Supplier Master</h1>
+        <Button size="sm" onClick={() => { setShowForm(true); setEditId(null); setForm(empty); }}>
           <Plus size={16} className="mr-1" /> Add New
         </Button>
       </div>

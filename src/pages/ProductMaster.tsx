@@ -91,18 +91,18 @@ export default function ProductMaster() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Product Master</h1>
-        <Button onClick={() => { setShowForm(true); setEditId(null); setForm(empty); }}>
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Product Master</h1>
+        <Button size="sm" onClick={() => { setShowForm(true); setEditId(null); setForm(empty); }}>
           <Plus size={16} className="mr-1" /> Add New
         </Button>
       </div>
 
       {showForm && (
-        <div className="bg-card rounded-lg border p-5 space-y-4">
+        <div className="bg-card rounded-lg border p-4 sm:p-5 space-y-4">
           <h3 className="font-semibold text-foreground">{editId ? 'Edit Product' : 'Add New Product'}</h3>
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input placeholder="Product Name *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
             <Input placeholder="Category" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} />
             <div className="space-y-2">
@@ -138,13 +138,40 @@ export default function ProductMaster() {
       )}
 
       <div className="bg-card rounded-lg border">
-        <div className="p-4 border-b">
+        <div className="p-3 sm:p-4 border-b">
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
           </div>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Mobile card view */}
+        <div className="divide-y sm:hidden">
+          {filtered.length === 0 && <p className="p-4 text-sm text-muted-foreground">No products found</p>}
+          {filtered.map(p => (
+            <div key={p.id} className="p-3 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-foreground text-sm">{p.name}</span>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => edit(p)}><Edit size={14} /></Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => remove(p.id)}><Trash2 size={14} className="text-destructive" /></Button>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                {p.category && <span>{p.category}</span>}
+                {p.category && p.brandName && <span>•</span>}
+                {p.brandName && <span>{p.brandName}</span>}
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <span className="font-medium text-foreground">₹{p.price.toLocaleString('en-IN')}</span>
+                {p.discount > 0 && <span className="text-muted-foreground text-xs">{p.discount}% off</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop table view */}
+        <div className="overflow-x-auto hidden sm:block">
           <table className="w-full text-sm">
             <thead><tr className="border-b bg-muted/50">
               <th className="text-left p-3 font-medium text-muted-foreground">Name</th>
