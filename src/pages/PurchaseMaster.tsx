@@ -52,6 +52,17 @@ export default function PurchaseMaster() {
     setEditId(p.id); setSupplierId(p.supplierId); setDate(p.date); setItems([...p.items]); setShowForm(true);
   };
 
+  const deletePurchase = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this purchase?')) return;
+    try {
+      await store.deletePurchase(id);
+      await loadData();
+      toast({ title: 'Purchase deleted!' });
+    } catch (e: any) {
+      toast({ title: 'Error deleting purchase', description: e.message, variant: 'destructive' });
+    }
+  };
+
   const save = async () => {
     if (!supplierId || items.length === 0) return;
     setLoading(true);
@@ -149,6 +160,7 @@ export default function PurchaseMaster() {
                   <td className="p-3 text-right font-medium text-foreground">₹{p.totalAmount.toLocaleString('en-IN')}</td>
                   <td className="p-3 text-right">
                     <Button variant="ghost" size="sm" onClick={() => editPurchase(p)}><Edit size={14} /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => deletePurchase(p.id)}><Trash2 size={14} className="text-destructive" /></Button>
                   </td>
                 </tr>
               ))}
