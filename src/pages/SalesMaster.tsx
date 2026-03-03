@@ -207,7 +207,7 @@ export default function SalesMaster() {
   const shareWhatsApp = (sale: Sale) => {
     const saleItems = sale.items.map((i, idx) => `${idx + 1}. ${i.productName} x${i.quantity} = ₹${i.total}`).join('\n');
     const message = encodeURIComponent(
-      `*Char Bhuja - Invoice ${sale.invoiceNumber}*\n` +
+      `*CHR - Invoice ${sale.invoiceNumber}*\n` +
       `Date: ${new Date(sale.date).toLocaleDateString('en-IN')}\n` +
       `Customer: ${sale.customerName}\n\n` +
       `*Items:*\n${saleItems}\n\n` +

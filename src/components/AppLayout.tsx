@@ -36,7 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       `}>
         <div className="flex items-center justify-between px-5 py-5 border-b border-sidebar-border">
           <div>
-            <h1 className="text-lg font-bold text-sidebar-primary">Char Bhuja</h1>
+            <h1 className="text-lg font-bold text-sidebar-primary">CharBhuja</h1>
             <p className="text-xs text-sidebar-muted">Billing System</p>
           </div>
           <button className="lg:hidden text-sidebar-foreground" onClick={() => setSidebarOpen(false)}>
@@ -79,7 +79,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Menu size={22} />
           </button>
           <h2 className="text-sm font-semibold text-foreground">
-            {navItems.find(n => n.to === location.pathname)?.label || 'Char Bhuja Billing'}
+            {navItems.find(n => n.to === location.pathname)?.label || 'CharBhuja Billing'}
           </h2>
         </header>
         <main className="flex-1 overflow-y-auto p-4 md:p-6 animate-fade-in">
