@@ -20,7 +20,7 @@ export default function BillPrint({ sale, showPrice, onClose }: BillPrintProps) 
       {/* Print overlay - visible only in print */}
       <div className="print-area" style={{ width: '148mm', minHeight: '210mm', padding: '8mm' }}>
         <div style={{ textAlign: 'center', marginBottom: '12px', borderBottom: '2px solid #000', paddingBottom: '8px' }}>
-          <h1 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>Char Bhuja</h1>
+          <h1 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>CHR</h1>
           <p style={{ fontSize: '10px', margin: '2px 0' }}>Invoice</p>
         </div>
 
