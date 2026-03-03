@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,23 +22,6 @@ export default function Auth() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast({ title: 'Login successful!' });
-      } else {
-        const redirectUrl = window.location.hostname.includes('homemuse.in')
-          ? 'https://homemuse.in'
-          : window.location.origin;
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { full_name: fullName },
-            emailRedirectTo: redirectUrl,
-          },
-        });
-        if (error) throw error;
-        toast({
-          title: 'Account created!',
-          description: 'Please check your email to verify your account.',
-        });
       }
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
@@ -56,14 +39,7 @@ export default function Auth() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 bg-card p-6 rounded-lg border shadow-sm">
-          <h2 className="text-lg font-semibold text-center">{isLogin ? 'Login' : 'Sign Up'}</h2>
-
-          {!isLogin && (
-            <div className="space-y-1">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input id="fullName" value={fullName} onChange={e => setFullName(e.target.value)} required />
-            </div>
-          )}
+          <h2 className="text-lg font-semibold text-center">Login</h2>
 
           <div className="space-y-1">
             <Label htmlFor="email">Email</Label>
@@ -76,15 +52,8 @@ export default function Auth() {
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Please wait...' : isLogin ? 'Login' : 'Sign Up'}
+            {loading ? 'Please wait...' : 'Login'}
           </Button>
-
-          <p className="text-center text-sm text-muted-foreground">
-            {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
-            <button type="button" className="text-primary underline" onClick={() => setIsLogin(!isLogin)}>
-              {isLogin ? 'Sign Up' : 'Login'}
-            </button>
-          </p>
         </form>
       </div>
     </div>
