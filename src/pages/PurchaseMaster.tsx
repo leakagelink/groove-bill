@@ -86,10 +86,10 @@ export default function PurchaseMaster() {
   const filtered = purchases.filter(p => p.supplierName.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Purchase Master</h1>
-        <Button onClick={() => { setShowForm(true); setItems([]); setSupplierId(''); setEditId(null); }}>
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Purchase Master</h1>
+        <Button size="sm" onClick={() => { setShowForm(true); setItems([]); setSupplierId(''); setEditId(null); }}>
           <Plus size={16} className="mr-1" /> Add New
         </Button>
       </div>
@@ -141,7 +141,29 @@ export default function PurchaseMaster() {
             <Input placeholder="Search by supplier..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
           </div>
         </div>
-        <div className="overflow-x-auto">
+        {/* Mobile card view */}
+        <div className="divide-y sm:hidden">
+          {filtered.length === 0 && <p className="p-4 text-sm text-muted-foreground">No purchases found</p>}
+          {filtered.map(p => (
+            <div key={p.id} className="p-3 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-foreground text-sm">{p.supplierName}</span>
+                <span className="text-xs text-muted-foreground">{new Date(p.date).toLocaleDateString('en-IN')}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{p.items.length} items</span>
+                <span className="font-medium text-foreground text-sm">₹{p.totalAmount.toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex gap-1 pt-1">
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => editPurchase(p)}><Edit size={12} className="mr-1" /> Edit</Button>
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => deletePurchase(p.id)}><Trash2 size={12} className="mr-1 text-destructive" /> Delete</Button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop table view */}
+        <div className="overflow-x-auto hidden sm:block">
           <table className="w-full text-sm">
             <thead><tr className="border-b bg-muted/50">
               <th className="text-left p-3 font-medium text-muted-foreground">Date</th>

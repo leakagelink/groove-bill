@@ -36,9 +36,9 @@ export default function Dashboard() {
   const totalPurchaseAmount = purchases.reduce((sum, p) => sum + p.totalAmount, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard</h1>
         <p className="text-muted-foreground text-sm mt-1">Welcome to CharBhuja Billing System</p>
       </div>
 

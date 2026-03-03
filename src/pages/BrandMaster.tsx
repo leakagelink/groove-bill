@@ -52,9 +52,9 @@ export default function BrandMaster() {
   const filtered = brands.filter(b => b.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-4 sm:space-y-6 max-w-2xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Brand Master</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Brand Master</h1>
       </div>
 
       <div className="bg-card rounded-lg border p-5 space-y-4">
