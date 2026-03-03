@@ -1,11 +1,12 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
-  Package, Tags, Truck, ShoppingCart, Receipt, LayoutDashboard, X, Menu, LogOut, Settings
+  Package, Tags, Truck, ShoppingCart, Receipt, LayoutDashboard, X, Menu, LogOut, Settings, Users
 } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useUserRole } from '@/hooks/useUserRole';
 
-const navItems = [
+const baseNavItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/products', label: 'Product Master', icon: Package },
   { to: '/brands', label: 'Brand Master', icon: Tags },
@@ -18,6 +19,11 @@ const navItems = [
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const { isAdmin } = useUserRole();
+
+  const navItems = isAdmin
+    ? [...baseNavItems, { to: '/users', label: 'User Management', icon: Users }]
+    : baseNavItems;
 
   return (
     <div className="flex h-screen overflow-hidden">
