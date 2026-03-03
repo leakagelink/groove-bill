@@ -58,15 +58,23 @@ export default function Settings() {
     }
 
     setEmailLoading(true);
-    const { error } = await supabase.auth.updateUser({ email: newEmail });
-    setEmailLoading(false);
-
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Success', description: 'Confirmation email bhej di gayi hai nayi email par. Please verify karein.' });
-      setNewEmail('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke('update-user-email', {
+        body: { email: newEmail },
+      });
+      if (res.error) {
+        toast({ title: 'Error', description: res.error.message, variant: 'destructive' });
+      } else if (res.data?.error) {
+        toast({ title: 'Error', description: res.data.error, variant: 'destructive' });
+      } else {
+        toast({ title: 'Success', description: 'Email successfully update ho gayi! Ab nayi email se login karein.' });
+        setNewEmail('');
+      }
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
     }
+    setEmailLoading(false);
   };
 
   return (
