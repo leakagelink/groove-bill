@@ -13,6 +13,7 @@ const baseNavItems = [
   { to: '/suppliers', label: 'Supplier Master', icon: Truck },
   { to: '/purchases', label: 'Purchase Master', icon: ShoppingCart },
   { to: '/sales', label: 'Sales Master', icon: Receipt },
+  { to: '/customers', label: 'Customer Master', icon: UserCheck },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 

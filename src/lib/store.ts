@@ -155,6 +155,10 @@ export const store = {
     if (error) throw error;
     return data.id;
   },
+  updateSalePaymentStatus: async (saleId: string, status: 'paid' | 'unpaid') => {
+    const { error } = await supabase.from('sales').update({ payment_status: status } as any).eq('id', saleId);
+    if (error) throw error;
+  },
 
   // Invoice counter
   getNextInvoiceNumber: async (): Promise<string> => {

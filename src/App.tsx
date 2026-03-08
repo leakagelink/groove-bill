@@ -61,6 +61,7 @@ function AppRoutes() {
         <Route path="/suppliers" element={<SupplierMaster />} />
         <Route path="/purchases" element={<PurchaseMaster />} />
         <Route path="/sales" element={<SalesMaster />} />
+        <Route path="/customers" element={<CustomerMaster />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/users" element={<UserManagement />} />
         <Route path="/auth" element={<Navigate to="/" replace />} />
