@@ -177,6 +177,7 @@ export default function PurchaseMaster() {
             <thead><tr className="border-b bg-muted/50">
               <th className="text-left p-3 font-medium text-muted-foreground">Date</th>
               <th className="text-left p-3 font-medium text-muted-foreground">Supplier</th>
+              <th className="text-left p-3 font-medium text-muted-foreground">Payment</th>
               <th className="text-right p-3 font-medium text-muted-foreground">Items</th>
               <th className="text-right p-3 font-medium text-muted-foreground">Total</th>
               <th className="text-right p-3 font-medium text-muted-foreground">Actions</th>
