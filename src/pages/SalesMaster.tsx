@@ -401,18 +401,20 @@ export default function SalesMaster() {
               <th className="text-left p-3 font-medium text-muted-foreground">Invoice</th>
               <th className="text-left p-3 font-medium text-muted-foreground">Date</th>
               <th className="text-left p-3 font-medium text-muted-foreground">Customer</th>
+              <th className="text-left p-3 font-medium text-muted-foreground">Payment</th>
               <th className="text-right p-3 font-medium text-muted-foreground">Amount</th>
               <th className="text-right p-3 font-medium text-muted-foreground">Discount</th>
               <th className="text-right p-3 font-medium text-muted-foreground">Final</th>
               <th className="text-right p-3 font-medium text-muted-foreground">Actions</th>
             </tr></thead>
             <tbody className="divide-y">
-              {filtered.length === 0 && <tr><td colSpan={7} className="p-4 text-muted-foreground">No sales found</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={8} className="p-4 text-muted-foreground">No sales found</td></tr>}
               {filtered.map(s => (
                 <tr key={s.id} className="hover:bg-muted/30">
                   <td className="p-3 font-mono text-sm text-primary">{s.invoiceNumber}</td>
                   <td className="p-3 text-foreground">{new Date(s.date).toLocaleDateString('en-IN')}</td>
                   <td className="p-3 font-medium text-foreground">{s.customerName}</td>
+                  <td className="p-3 text-muted-foreground capitalize">{s.paymentMethod || 'cash'}</td>
                   <td className="p-3 text-right text-muted-foreground">₹{s.totalAmount.toLocaleString('en-IN')}</td>
                   <td className="p-3 text-right text-destructive">₹{s.totalDiscount.toLocaleString('en-IN')}</td>
                   <td className="p-3 text-right font-medium text-foreground">₹{s.finalAmount.toLocaleString('en-IN')}</td>
