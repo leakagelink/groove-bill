@@ -300,11 +300,18 @@ export default function SalesMaster() {
       {showForm && (
         <div className="bg-card rounded-lg border p-5 space-y-4">
           <h3 className="font-semibold text-foreground">{editingSale ? `Edit Sale - ${editingSale.invoiceNumber}` : 'New Sale'}</h3>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <Input placeholder="Customer Name *" value={customerName} onChange={e => setCustomerName(e.target.value)} />
             <Input placeholder="Phone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
             <Input placeholder="Address" value={customerAddress} onChange={e => setCustomerAddress(e.target.value)} />
             <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+              <option value="cash">💵 Cash</option>
+              <option value="online">🏦 Online</option>
+              <option value="upi">📱 UPI</option>
+              <option value="card">💳 Card</option>
+              <option value="cheque">📝 Cheque</option>
+            </select>
           </div>
 
           <div className="space-y-3">
