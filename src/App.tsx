@@ -14,6 +14,7 @@ import SupplierMaster from "./pages/SupplierMaster";
 import PurchaseMaster from "./pages/PurchaseMaster";
 import SalesMaster from "./pages/SalesMaster";
 import Settings from "./pages/Settings";
+import CustomerMaster from "./pages/CustomerMaster";
 import UserManagement from "./pages/UserManagement";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
