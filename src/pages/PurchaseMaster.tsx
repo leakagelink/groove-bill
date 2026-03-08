@@ -76,7 +76,7 @@ export default function PurchaseMaster() {
         paymentMethod: paymentMethod as any,
       } as Purchase);
       await loadData();
-      setShowForm(false); setEditId(null); setSupplierId(''); setItems([]);
+      setShowForm(false); setEditId(null); setSupplierId(''); setItems([]); setPaymentMethod('cash');
       toast({ title: editId ? 'Purchase updated!' : 'Purchase saved!' });
     } catch (e: any) {
       toast({ title: 'Error saving purchase', description: e.message, variant: 'destructive' });
