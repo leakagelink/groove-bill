@@ -160,7 +160,7 @@ export default function PurchaseMaster() {
                 <span className="text-xs text-muted-foreground">{new Date(p.date).toLocaleDateString('en-IN')}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">{p.items.length} items</span>
+                <span className="text-xs text-muted-foreground">{p.items.length} items • <span className="capitalize">{p.paymentMethod || 'cash'}</span></span>
                 <span className="font-medium text-foreground text-sm">₹{p.totalAmount.toLocaleString('en-IN')}</span>
               </div>
               <div className="flex gap-1 pt-1">
