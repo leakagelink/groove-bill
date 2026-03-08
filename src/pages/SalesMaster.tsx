@@ -28,6 +28,7 @@ export default function SalesMaster() {
   const [customerAddress, setCustomerAddress] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [items, setItems] = useState<SaleItem[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<string>('cash');
 
   // Print state
   const [printSale, setPrintSale] = useState<Sale | null>(null);
@@ -145,6 +146,7 @@ export default function SalesMaster() {
     setCustomerPhone(sale.customerPhone);
     setCustomerAddress('');
     setDate(sale.date);
+    setPaymentMethod(sale.paymentMethod || 'cash');
     setItems(sale.items.map(i => ({ ...i })));
     setShowForm(true);
   };
@@ -154,6 +156,7 @@ export default function SalesMaster() {
     setEditingSale(null);
     setCustomerName(''); setCustomerPhone(''); setCustomerAddress(''); setItems([]);
     setDate(new Date().toISOString().split('T')[0]);
+    setPaymentMethod('cash');
   };
 
   const save = async () => {
@@ -176,6 +179,7 @@ export default function SalesMaster() {
         customerName, customerPhone, date, items,
         totalAmount, totalDiscount, finalAmount,
         paymentStatus: editingSale?.paymentStatus || 'unpaid',
+        paymentMethod: paymentMethod as any,
       };
       await store.saveSale(sale);
       setSales(await store.getSales());
@@ -296,11 +300,18 @@ export default function SalesMaster() {
       {showForm && (
         <div className="bg-card rounded-lg border p-5 space-y-4">
           <h3 className="font-semibold text-foreground">{editingSale ? `Edit Sale - ${editingSale.invoiceNumber}` : 'New Sale'}</h3>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <Input placeholder="Customer Name *" value={customerName} onChange={e => setCustomerName(e.target.value)} />
             <Input placeholder="Phone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
             <Input placeholder="Address" value={customerAddress} onChange={e => setCustomerAddress(e.target.value)} />
             <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+              <option value="cash">💵 Cash</option>
+              <option value="online">🏦 Online</option>
+              <option value="upi">📱 UPI</option>
+              <option value="card">💳 Card</option>
+              <option value="cheque">📝 Cheque</option>
+            </select>
           </div>
 
           <div className="space-y-3">
@@ -374,6 +385,7 @@ export default function SalesMaster() {
                 {s.totalDiscount > 0 && (
                   <div className="text-xs text-muted-foreground">Discount: ₹{s.totalDiscount.toLocaleString('en-IN')}</div>
                 )}
+                <div className="text-xs text-muted-foreground capitalize">Payment: {s.paymentMethod || 'cash'}</div>
                 <div className="flex gap-1 pt-1">
                   <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => startEditSale(s)}><Pencil size={12} className="mr-1" /> Edit</Button>
                   <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handlePrintFromList(s)}><Printer size={12} className="mr-1" /> Print</Button>
@@ -389,18 +401,20 @@ export default function SalesMaster() {
               <th className="text-left p-3 font-medium text-muted-foreground">Invoice</th>
               <th className="text-left p-3 font-medium text-muted-foreground">Date</th>
               <th className="text-left p-3 font-medium text-muted-foreground">Customer</th>
+              <th className="text-left p-3 font-medium text-muted-foreground">Payment</th>
               <th className="text-right p-3 font-medium text-muted-foreground">Amount</th>
               <th className="text-right p-3 font-medium text-muted-foreground">Discount</th>
               <th className="text-right p-3 font-medium text-muted-foreground">Final</th>
               <th className="text-right p-3 font-medium text-muted-foreground">Actions</th>
             </tr></thead>
             <tbody className="divide-y">
-              {filtered.length === 0 && <tr><td colSpan={7} className="p-4 text-muted-foreground">No sales found</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={8} className="p-4 text-muted-foreground">No sales found</td></tr>}
               {filtered.map(s => (
                 <tr key={s.id} className="hover:bg-muted/30">
                   <td className="p-3 font-mono text-sm text-primary">{s.invoiceNumber}</td>
                   <td className="p-3 text-foreground">{new Date(s.date).toLocaleDateString('en-IN')}</td>
                   <td className="p-3 font-medium text-foreground">{s.customerName}</td>
+                  <td className="p-3 text-muted-foreground capitalize">{s.paymentMethod || 'cash'}</td>
                   <td className="p-3 text-right text-muted-foreground">₹{s.totalAmount.toLocaleString('en-IN')}</td>
                   <td className="p-3 text-right text-destructive">₹{s.totalDiscount.toLocaleString('en-IN')}</td>
                   <td className="p-3 text-right font-medium text-foreground">₹{s.finalAmount.toLocaleString('en-IN')}</td>

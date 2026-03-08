@@ -90,11 +90,11 @@ export const store = {
   getPurchases: async (): Promise<Purchase[]> => {
     const { data, error } = await supabase.from('purchases').select('*').order('created_at', { ascending: false });
     if (error) throw error;
-    return (data || []).map(p => ({ id: p.id, supplierId: p.supplier_id || '', supplierName: p.supplier_name || '', date: p.date, items: p.items as any, totalAmount: Number(p.total_amount) }));
+    return (data || []).map(p => ({ id: p.id, supplierId: p.supplier_id || '', supplierName: p.supplier_name || '', date: p.date, items: p.items as any, totalAmount: Number(p.total_amount), paymentMethod: (p as any).payment_method || 'cash' }));
   },
   savePurchase: async (purchase: Omit<Purchase, 'id'> & { id?: string }) => {
     const userId = await getUserId();
-    const row = { supplier_id: purchase.supplierId || null, supplier_name: purchase.supplierName, date: purchase.date, items: purchase.items as any, total_amount: purchase.totalAmount, user_id: userId };
+    const row = { supplier_id: purchase.supplierId || null, supplier_name: purchase.supplierName, date: purchase.date, items: purchase.items as any, total_amount: purchase.totalAmount, payment_method: purchase.paymentMethod || 'cash', user_id: userId };
     if (purchase.id) {
       const { data: existing } = await supabase.from('purchases').select('id').eq('id', purchase.id).single();
       if (existing) {
@@ -138,11 +138,11 @@ export const store = {
   getSales: async (): Promise<Sale[]> => {
     const { data, error } = await supabase.from('sales').select('*').order('created_at', { ascending: false });
     if (error) throw error;
-    return (data || []).map(s => ({ id: s.id, invoiceNumber: s.invoice_number, customerId: s.customer_id || '', customerName: s.customer_name || '', customerPhone: s.customer_phone || '', date: s.date, items: s.items as any, totalAmount: Number(s.total_amount), totalDiscount: Number(s.total_discount), finalAmount: Number(s.final_amount), paymentStatus: (s as any).payment_status || 'unpaid' }));
+    return (data || []).map(s => ({ id: s.id, invoiceNumber: s.invoice_number, customerId: s.customer_id || '', customerName: s.customer_name || '', customerPhone: s.customer_phone || '', date: s.date, items: s.items as any, totalAmount: Number(s.total_amount), totalDiscount: Number(s.total_discount), finalAmount: Number(s.final_amount), paymentStatus: (s as any).payment_status || 'unpaid', paymentMethod: (s as any).payment_method || 'cash' }));
   },
   saveSale: async (sale: Omit<Sale, 'id'> & { id?: string }) => {
     const userId = await getUserId();
-    const row = { invoice_number: sale.invoiceNumber, customer_id: sale.customerId || null, customer_name: sale.customerName, customer_phone: sale.customerPhone, date: sale.date, items: sale.items as any, total_amount: sale.totalAmount, total_discount: sale.totalDiscount, final_amount: sale.finalAmount, payment_status: sale.paymentStatus || 'unpaid', user_id: userId };
+    const row = { invoice_number: sale.invoiceNumber, customer_id: sale.customerId || null, customer_name: sale.customerName, customer_phone: sale.customerPhone, date: sale.date, items: sale.items as any, total_amount: sale.totalAmount, total_discount: sale.totalDiscount, final_amount: sale.finalAmount, payment_status: sale.paymentStatus || 'unpaid', payment_method: sale.paymentMethod || 'cash', user_id: userId };
     if (sale.id) {
       const { data: existing } = await supabase.from('sales').select('id').eq('id', sale.id).single();
       if (existing) {

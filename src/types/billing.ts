@@ -31,6 +31,8 @@ export interface PurchaseItem {
   total: number;
 }
 
+export type PaymentMethod = 'cash' | 'online' | 'card' | 'upi' | 'cheque';
+
 export interface Purchase {
   id: string;
   supplierId: string;
@@ -38,6 +40,7 @@ export interface Purchase {
   date: string;
   items: PurchaseItem[];
   totalAmount: number;
+  paymentMethod: PaymentMethod;
 }
 
 export interface Customer {
@@ -70,6 +73,7 @@ export interface Sale {
   totalDiscount: number;
   finalAmount: number;
   paymentStatus: 'paid' | 'unpaid';
+  paymentMethod: PaymentMethod;
 }
 
 export interface Quotation {
