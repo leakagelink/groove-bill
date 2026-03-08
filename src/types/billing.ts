@@ -73,6 +73,7 @@ export interface Sale {
   totalDiscount: number;
   finalAmount: number;
   paymentStatus: 'paid' | 'unpaid';
+  paymentMethod: PaymentMethod;
 }
 
 export interface Quotation {
