@@ -156,6 +156,7 @@ export default function SalesMaster() {
     setEditingSale(null);
     setCustomerName(''); setCustomerPhone(''); setCustomerAddress(''); setItems([]);
     setDate(new Date().toISOString().split('T')[0]);
+    setPaymentMethod('cash');
   };
 
   const save = async () => {
