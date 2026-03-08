@@ -175,6 +175,7 @@ export default function SalesMaster() {
         customerId: customerId,
         customerName, customerPhone, date, items,
         totalAmount, totalDiscount, finalAmount,
+        paymentStatus: editingSale?.paymentStatus || 'unpaid',
       };
       await store.saveSale(sale);
       setSales(await store.getSales());

@@ -200,6 +200,7 @@ export type Database = {
           id: string
           invoice_number: string
           items: Json
+          payment_status: string
           total_amount: number
           total_discount: number
           user_id: string
@@ -214,6 +215,7 @@ export type Database = {
           id?: string
           invoice_number: string
           items?: Json
+          payment_status?: string
           total_amount?: number
           total_discount?: number
           user_id: string
@@ -228,6 +230,7 @@ export type Database = {
           id?: string
           invoice_number?: string
           items?: Json
+          payment_status?: string
           total_amount?: number
           total_discount?: number
           user_id?: string

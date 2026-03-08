@@ -138,11 +138,11 @@ export const store = {
   getSales: async (): Promise<Sale[]> => {
     const { data, error } = await supabase.from('sales').select('*').order('created_at', { ascending: false });
     if (error) throw error;
-    return (data || []).map(s => ({ id: s.id, invoiceNumber: s.invoice_number, customerId: s.customer_id || '', customerName: s.customer_name || '', customerPhone: s.customer_phone || '', date: s.date, items: s.items as any, totalAmount: Number(s.total_amount), totalDiscount: Number(s.total_discount), finalAmount: Number(s.final_amount) }));
+    return (data || []).map(s => ({ id: s.id, invoiceNumber: s.invoice_number, customerId: s.customer_id || '', customerName: s.customer_name || '', customerPhone: s.customer_phone || '', date: s.date, items: s.items as any, totalAmount: Number(s.total_amount), totalDiscount: Number(s.total_discount), finalAmount: Number(s.final_amount), paymentStatus: (s as any).payment_status || 'unpaid' }));
   },
   saveSale: async (sale: Omit<Sale, 'id'> & { id?: string }) => {
     const userId = await getUserId();
-    const row = { invoice_number: sale.invoiceNumber, customer_id: sale.customerId || null, customer_name: sale.customerName, customer_phone: sale.customerPhone, date: sale.date, items: sale.items as any, total_amount: sale.totalAmount, total_discount: sale.totalDiscount, final_amount: sale.finalAmount, user_id: userId };
+    const row = { invoice_number: sale.invoiceNumber, customer_id: sale.customerId || null, customer_name: sale.customerName, customer_phone: sale.customerPhone, date: sale.date, items: sale.items as any, total_amount: sale.totalAmount, total_discount: sale.totalDiscount, final_amount: sale.finalAmount, payment_status: sale.paymentStatus || 'unpaid', user_id: userId };
     if (sale.id) {
       const { data: existing } = await supabase.from('sales').select('id').eq('id', sale.id).single();
       if (existing) {
@@ -154,6 +154,10 @@ export const store = {
     const { data, error } = await supabase.from('sales').insert(row).select('id').single();
     if (error) throw error;
     return data.id;
+  },
+  updateSalePaymentStatus: async (saleId: string, status: 'paid' | 'unpaid') => {
+    const { error } = await supabase.from('sales').update({ payment_status: status } as any).eq('id', saleId);
+    if (error) throw error;
   },
 
   // Invoice counter

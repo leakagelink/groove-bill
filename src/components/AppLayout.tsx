@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
-  Package, Tags, Truck, ShoppingCart, Receipt, LayoutDashboard, X, Menu, LogOut, Settings, Users
+  Package, Tags, Truck, ShoppingCart, Receipt, LayoutDashboard, X, Menu, LogOut, Settings, Users, UserCheck
 } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +13,7 @@ const baseNavItems = [
   { to: '/suppliers', label: 'Supplier Master', icon: Truck },
   { to: '/purchases', label: 'Purchase Master', icon: ShoppingCart },
   { to: '/sales', label: 'Sales Master', icon: Receipt },
+  { to: '/customers', label: 'Customer Master', icon: UserCheck },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 

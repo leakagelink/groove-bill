@@ -69,4 +69,5 @@ export interface Sale {
   totalAmount: number;
   totalDiscount: number;
   finalAmount: number;
+  paymentStatus: 'paid' | 'unpaid';
 }
