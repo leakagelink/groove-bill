@@ -14,6 +14,7 @@ const baseNavItems = [
   { to: '/purchases', label: 'Purchase Master', icon: ShoppingCart },
   { to: '/sales', label: 'Sales Master', icon: Receipt },
   { to: '/customers', label: 'Customer Master', icon: UserCheck },
+  { to: '/quotations', label: 'Quotation Maker', icon: FileText },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 

@@ -71,3 +71,18 @@ export interface Sale {
   finalAmount: number;
   paymentStatus: 'paid' | 'unpaid';
 }
+
+export interface Quotation {
+  id: string;
+  quotationNumber: string;
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
+  date: string;
+  items: SaleItem[];
+  totalAmount: number;
+  totalDiscount: number;
+  finalAmount: number;
+  notes: string;
+  validUntil: string;
+}
