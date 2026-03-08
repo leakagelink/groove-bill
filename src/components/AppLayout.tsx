@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
-  Package, Tags, Truck, ShoppingCart, Receipt, LayoutDashboard, X, Menu, LogOut, Settings, Users
+  Package, Tags, Truck, ShoppingCart, Receipt, LayoutDashboard, X, Menu, LogOut, Settings, Users, UserCheck
 } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
