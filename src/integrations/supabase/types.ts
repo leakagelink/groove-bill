@@ -189,6 +189,75 @@ export type Database = {
           },
         ]
       }
+      quotation_counters: {
+        Row: {
+          counter: number
+          id: string
+          user_id: string
+        }
+        Insert: {
+          counter?: number
+          id?: string
+          user_id: string
+        }
+        Update: {
+          counter?: number
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quotations: {
+        Row: {
+          created_at: string
+          customer_address: string | null
+          customer_name: string
+          customer_phone: string | null
+          date: string
+          final_amount: number
+          id: string
+          items: Json
+          notes: string | null
+          quotation_number: string
+          total_amount: number
+          total_discount: number
+          user_id: string
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_address?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          date: string
+          final_amount?: number
+          id?: string
+          items?: Json
+          notes?: string | null
+          quotation_number: string
+          total_amount?: number
+          total_discount?: number
+          user_id: string
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_address?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          date?: string
+          final_amount?: number
+          id?: string
+          items?: Json
+          notes?: string | null
+          quotation_number?: string
+          total_amount?: number
+          total_discount?: number
+          user_id?: string
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       sales: {
         Row: {
           created_at: string

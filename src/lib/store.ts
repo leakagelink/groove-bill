@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Brand, Supplier, Product, Purchase, Sale, Customer } from '@/types/billing';
+import { Brand, Supplier, Product, Purchase, Sale, Customer, Quotation } from '@/types/billing';
 
 async function getUserId(): Promise<string> {
   const { data: { session } } = await supabase.auth.getSession();
@@ -158,6 +158,56 @@ export const store = {
   updateSalePaymentStatus: async (saleId: string, status: 'paid' | 'unpaid') => {
     const { error } = await supabase.from('sales').update({ payment_status: status } as any).eq('id', saleId);
     if (error) throw error;
+  },
+
+  // Quotations
+  getQuotations: async (): Promise<Quotation[]> => {
+    const { data, error } = await supabase.from('quotations' as any).select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map((q: any) => ({
+      id: q.id, quotationNumber: q.quotation_number, customerName: q.customer_name || '',
+      customerPhone: q.customer_phone || '', customerAddress: q.customer_address || '',
+      date: q.date, items: q.items as any, totalAmount: Number(q.total_amount),
+      totalDiscount: Number(q.total_discount), finalAmount: Number(q.final_amount),
+      notes: q.notes || '', validUntil: q.valid_until || '',
+    }));
+  },
+  saveQuotation: async (quotation: Omit<Quotation, 'id'> & { id?: string }) => {
+    const userId = await getUserId();
+    const row = {
+      quotation_number: quotation.quotationNumber, customer_name: quotation.customerName,
+      customer_phone: quotation.customerPhone, customer_address: quotation.customerAddress,
+      date: quotation.date, items: quotation.items as any, total_amount: quotation.totalAmount,
+      total_discount: quotation.totalDiscount, final_amount: quotation.finalAmount,
+      notes: quotation.notes, valid_until: quotation.validUntil, user_id: userId,
+    };
+    if (quotation.id) {
+      const { data: existing } = await (supabase.from('quotations' as any) as any).select('id').eq('id', quotation.id).single();
+      if (existing) {
+        const { error } = await (supabase.from('quotations' as any) as any).update(row).eq('id', quotation.id);
+        if (error) throw error;
+        return quotation.id;
+      }
+    }
+    const { data, error } = await (supabase.from('quotations' as any) as any).insert(row).select('id').single();
+    if (error) throw error;
+    return data.id;
+  },
+  deleteQuotation: async (id: string) => {
+    const { error } = await (supabase.from('quotations' as any) as any).delete().eq('id', id);
+    if (error) throw error;
+  },
+  getNextQuotationNumber: async (): Promise<string> => {
+    const userId = await getUserId();
+    const { data: existing } = await (supabase.from('quotation_counters' as any) as any).select('*').eq('user_id', userId).single();
+    if (existing) {
+      const newCounter = existing.counter + 1;
+      await (supabase.from('quotation_counters' as any) as any).update({ counter: newCounter }).eq('user_id', userId);
+      return `QT-${newCounter.toString().padStart(4, '0')}`;
+    } else {
+      await (supabase.from('quotation_counters' as any) as any).insert({ user_id: userId, counter: 1 });
+      return 'QT-0001';
+    }
   },
 
   // Invoice counter

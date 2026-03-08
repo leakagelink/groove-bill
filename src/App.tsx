@@ -15,6 +15,7 @@ import PurchaseMaster from "./pages/PurchaseMaster";
 import SalesMaster from "./pages/SalesMaster";
 import Settings from "./pages/Settings";
 import CustomerMaster from "./pages/CustomerMaster";
+import QuotationMaster from "./pages/QuotationMaster";
 import UserManagement from "./pages/UserManagement";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -62,6 +63,7 @@ function AppRoutes() {
         <Route path="/purchases" element={<PurchaseMaster />} />
         <Route path="/sales" element={<SalesMaster />} />
         <Route path="/customers" element={<CustomerMaster />} />
+        <Route path="/quotations" element={<QuotationMaster />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/users" element={<UserManagement />} />
         <Route path="/auth" element={<Navigate to="/" replace />} />
