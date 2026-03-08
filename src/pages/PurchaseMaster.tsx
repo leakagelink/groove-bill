@@ -183,7 +183,7 @@ export default function PurchaseMaster() {
               <th className="text-right p-3 font-medium text-muted-foreground">Actions</th>
             </tr></thead>
             <tbody className="divide-y">
-              {filtered.length === 0 && <tr><td colSpan={5} className="p-4 text-muted-foreground">No purchases found</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={6} className="p-4 text-muted-foreground">No purchases found</td></tr>}
               {filtered.map(p => (
                 <tr key={p.id} className="hover:bg-muted/30">
                   <td className="p-3 text-foreground">{new Date(p.date).toLocaleDateString('en-IN')}</td>
