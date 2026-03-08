@@ -385,6 +385,7 @@ export default function SalesMaster() {
                 {s.totalDiscount > 0 && (
                   <div className="text-xs text-muted-foreground">Discount: ₹{s.totalDiscount.toLocaleString('en-IN')}</div>
                 )}
+                <div className="text-xs text-muted-foreground capitalize">Payment: {s.paymentMethod || 'cash'}</div>
                 <div className="flex gap-1 pt-1">
                   <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => startEditSale(s)}><Pencil size={12} className="mr-1" /> Edit</Button>
                   <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handlePrintFromList(s)}><Printer size={12} className="mr-1" /> Print</Button>
