@@ -90,7 +90,7 @@ export const store = {
   getPurchases: async (): Promise<Purchase[]> => {
     const { data, error } = await supabase.from('purchases').select('*').order('created_at', { ascending: false });
     if (error) throw error;
-    return (data || []).map(p => ({ id: p.id, supplierId: p.supplier_id || '', supplierName: p.supplier_name || '', date: p.date, items: p.items as any, totalAmount: Number(p.total_amount) }));
+    return (data || []).map(p => ({ id: p.id, supplierId: p.supplier_id || '', supplierName: p.supplier_name || '', date: p.date, items: p.items as any, totalAmount: Number(p.total_amount), paymentMethod: (p as any).payment_method || 'cash' }));
   },
   savePurchase: async (purchase: Omit<Purchase, 'id'> & { id?: string }) => {
     const userId = await getUserId();
