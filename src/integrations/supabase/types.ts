@@ -154,6 +154,7 @@ export type Database = {
           date: string
           id: string
           items: Json
+          payment_method: string
           supplier_id: string | null
           supplier_name: string | null
           total_amount: number
@@ -164,6 +165,7 @@ export type Database = {
           date: string
           id?: string
           items?: Json
+          payment_method?: string
           supplier_id?: string | null
           supplier_name?: string | null
           total_amount?: number
@@ -174,6 +176,7 @@ export type Database = {
           date?: string
           id?: string
           items?: Json
+          payment_method?: string
           supplier_id?: string | null
           supplier_name?: string | null
           total_amount?: number
@@ -269,6 +272,7 @@ export type Database = {
           id: string
           invoice_number: string
           items: Json
+          payment_method: string
           payment_status: string
           total_amount: number
           total_discount: number
@@ -284,6 +288,7 @@ export type Database = {
           id?: string
           invoice_number: string
           items?: Json
+          payment_method?: string
           payment_status?: string
           total_amount?: number
           total_discount?: number
@@ -299,6 +304,7 @@ export type Database = {
           id?: string
           invoice_number?: string
           items?: Json
+          payment_method?: string
           payment_status?: string
           total_amount?: number
           total_discount?: number
