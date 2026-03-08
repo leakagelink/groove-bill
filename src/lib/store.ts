@@ -94,7 +94,7 @@ export const store = {
   },
   savePurchase: async (purchase: Omit<Purchase, 'id'> & { id?: string }) => {
     const userId = await getUserId();
-    const row = { supplier_id: purchase.supplierId || null, supplier_name: purchase.supplierName, date: purchase.date, items: purchase.items as any, total_amount: purchase.totalAmount, user_id: userId };
+    const row = { supplier_id: purchase.supplierId || null, supplier_name: purchase.supplierName, date: purchase.date, items: purchase.items as any, total_amount: purchase.totalAmount, payment_method: purchase.paymentMethod || 'cash', user_id: userId };
     if (purchase.id) {
       const { data: existing } = await supabase.from('purchases').select('id').eq('id', purchase.id).single();
       if (existing) {
