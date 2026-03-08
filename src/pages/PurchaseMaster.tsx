@@ -188,6 +188,7 @@ export default function PurchaseMaster() {
                 <tr key={p.id} className="hover:bg-muted/30">
                   <td className="p-3 text-foreground">{new Date(p.date).toLocaleDateString('en-IN')}</td>
                   <td className="p-3 font-medium text-foreground">{p.supplierName}</td>
+                  <td className="p-3 text-muted-foreground capitalize">{p.paymentMethod || 'cash'}</td>
                   <td className="p-3 text-right text-muted-foreground">{p.items.length}</td>
                   <td className="p-3 text-right font-medium text-foreground">₹{p.totalAmount.toLocaleString('en-IN')}</td>
                   <td className="p-3 text-right">
