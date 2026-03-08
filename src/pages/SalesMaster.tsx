@@ -28,6 +28,7 @@ export default function SalesMaster() {
   const [customerAddress, setCustomerAddress] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [items, setItems] = useState<SaleItem[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<string>('cash');
 
   // Print state
   const [printSale, setPrintSale] = useState<Sale | null>(null);
