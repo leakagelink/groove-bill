@@ -50,7 +50,7 @@ export default function PurchaseMaster() {
   const removeItem = (idx: number) => setItems(items.filter((_, i) => i !== idx));
 
   const editPurchase = (p: Purchase) => {
-    setEditId(p.id); setSupplierId(p.supplierId); setDate(p.date); setItems([...p.items]); setShowForm(true);
+    setEditId(p.id); setSupplierId(p.supplierId); setDate(p.date); setPaymentMethod(p.paymentMethod || 'cash'); setItems([...p.items]); setShowForm(true);
   };
 
   const deletePurchase = async (id: string) => {
