@@ -15,6 +15,7 @@ import PurchaseMaster from "./pages/PurchaseMaster";
 import SalesMaster from "./pages/SalesMaster";
 import Settings from "./pages/Settings";
 import CustomerMaster from "./pages/CustomerMaster";
+import QuotationMaster from "./pages/QuotationMaster";
 import UserManagement from "./pages/UserManagement";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
