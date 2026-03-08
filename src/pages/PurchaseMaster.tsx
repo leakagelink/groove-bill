@@ -73,6 +73,7 @@ export default function PurchaseMaster() {
         id: editId || undefined,
         supplierId, supplierName: supplier?.name || '', date, items,
         totalAmount: items.reduce((sum, i) => sum + i.total, 0),
+        paymentMethod: paymentMethod as any,
       } as Purchase);
       await loadData();
       setShowForm(false); setEditId(null); setSupplierId(''); setItems([]);
