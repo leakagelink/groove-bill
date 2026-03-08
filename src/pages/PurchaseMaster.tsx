@@ -99,12 +99,19 @@ export default function PurchaseMaster() {
       {showForm && (
         <div className="bg-card rounded-lg border p-5 space-y-4">
           <h3 className="font-semibold text-foreground">{editId ? 'Edit Purchase' : 'New Purchase'}</h3>
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid sm:grid-cols-3 gap-3">
             <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={supplierId} onChange={e => setSupplierId(e.target.value)}>
               <option value="">Select Supplier *</option>
               {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
             <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+              <option value="cash">💵 Cash</option>
+              <option value="online">🏦 Online</option>
+              <option value="upi">📱 UPI</option>
+              <option value="card">💳 Card</option>
+              <option value="cheque">📝 Cheque</option>
+            </select>
           </div>
 
           <div className="space-y-3">
