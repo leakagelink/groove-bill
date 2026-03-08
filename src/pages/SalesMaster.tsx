@@ -146,6 +146,7 @@ export default function SalesMaster() {
     setCustomerPhone(sale.customerPhone);
     setCustomerAddress('');
     setDate(sale.date);
+    setPaymentMethod(sale.paymentMethod || 'cash');
     setItems(sale.items.map(i => ({ ...i })));
     setShowForm(true);
   };
