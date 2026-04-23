@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Download, Filter, TrendingUp, TrendingDown, IndianRupee, BarChart3, Package } from 'lucide-react';
 
-type ReportTab = 'sales' | 'purchases' | 'summary' | 'closing';
+type ReportTab = 'sales' | 'purchases' | 'summary' | 'closing' | 'sales_register' | 'purchase_register' | 'payment_register' | 'ledger';
 type ViewType = 'summary' | 'detailed';
 
 export default function Reports() {
@@ -28,6 +28,9 @@ export default function Reports() {
   const [csOnlyNegative, setCsOnlyNegative] = useState(false);
   const [csShowZero, setCsShowZero] = useState(true);
   const [csIncludeAccount, setCsIncludeAccount] = useState(false);
+
+  // Ledger filter
+  const [ledgerAccount, setLedgerAccount] = useState('all');
 
   const { toast } = useToast();
 
