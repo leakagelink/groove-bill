@@ -92,6 +92,36 @@ export type Database = {
         }
         Relationships: []
       }
+      other_accounts: {
+        Row: {
+          account_type: string
+          created_at: string
+          group_name: string | null
+          id: string
+          name: string
+          opening_balance: number
+          user_id: string
+        }
+        Insert: {
+          account_type?: string
+          created_at?: string
+          group_name?: string | null
+          id?: string
+          name: string
+          opening_balance?: number
+          user_id: string
+        }
+        Update: {
+          account_type?: string
+          created_at?: string
+          group_name?: string | null
+          id?: string
+          name?: string
+          opening_balance?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       product_groups: {
         Row: {
           created_at: string
@@ -386,31 +416,37 @@ export type Database = {
       suppliers: {
         Row: {
           address: string | null
+          city: string | null
           created_at: string
           email: string | null
           gst_number: string | null
           id: string
           name: string
+          opening_balance: number
           phone: string | null
           user_id: string
         }
         Insert: {
           address?: string | null
+          city?: string | null
           created_at?: string
           email?: string | null
           gst_number?: string | null
           id?: string
           name: string
+          opening_balance?: number
           phone?: string | null
           user_id: string
         }
         Update: {
           address?: string | null
+          city?: string | null
           created_at?: string
           email?: string | null
           gst_number?: string | null
           id?: string
           name?: string
+          opening_balance?: number
           phone?: string | null
           user_id?: string
         }
