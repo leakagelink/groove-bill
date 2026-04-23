@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Brand, Supplier, Product, Purchase, Sale, Customer, Quotation } from '@/types/billing';
+import { Brand, Supplier, Product, Purchase, Sale, Customer, Quotation, ProductGroup } from '@/types/billing';
 
 async function getUserId(): Promise<string> {
   const { data: { session } } = await supabase.auth.getSession();
@@ -60,15 +60,64 @@ export const store = {
     if (error) throw error;
   },
 
+  // Product Groups
+  getProductGroups: async (): Promise<ProductGroup[]> => {
+    const { data, error } = await (supabase.from('product_groups' as any) as any).select('*').order('name');
+    if (error) throw error;
+    return (data || []).map((g: any) => ({ id: g.id, name: g.name, description: g.description || '' }));
+  },
+  saveProductGroup: async (group: Omit<ProductGroup, 'id'> & { id?: string }) => {
+    const userId = await getUserId();
+    const row = { name: group.name, description: group.description, user_id: userId };
+    if (group.id) {
+      const { data: existing } = await (supabase.from('product_groups' as any) as any).select('id').eq('id', group.id).single();
+      if (existing) {
+        const { error } = await (supabase.from('product_groups' as any) as any).update(row).eq('id', group.id);
+        if (error) throw error;
+        return group.id;
+      }
+    }
+    const { data, error } = await (supabase.from('product_groups' as any) as any).insert(row).select('id').single();
+    if (error) throw error;
+    return data.id;
+  },
+  deleteProductGroup: async (id: string) => {
+    const { error } = await (supabase.from('product_groups' as any) as any).delete().eq('id', id);
+    if (error) throw error;
+  },
+
   // Products
   getProducts: async (): Promise<Product[]> => {
     const { data, error } = await supabase.from('products').select('*').order('name');
     if (error) throw error;
-    return (data || []).map(p => ({ id: p.id, name: p.name, category: p.category || '', brandId: p.brand_id || '', brandName: p.brand_name || '', price: Number(p.price), discount: Number(p.discount) }));
+    return (data || []).map((p: any) => ({
+      id: p.id, name: p.name, category: p.category || '',
+      brandId: p.brand_id || '', brandName: p.brand_name || '',
+      price: Number(p.price), discount: Number(p.discount),
+      groupId: p.group_id || '', groupName: p.group_name || '',
+      sellingPrice: Number(p.selling_price || 0),
+      purchasePrice: Number(p.purchase_price || 0),
+      hsnSac: p.hsn_sac || '', taxPercent: Number(p.tax_percent || 0),
+      openingStock: Number(p.opening_stock || 0),
+      productType: (p.product_type || 'goods') as 'goods' | 'service',
+      unit: p.unit || 'pcs',
+    }));
   },
   saveProduct: async (product: Omit<Product, 'id'> & { id?: string }) => {
     const userId = await getUserId();
-    const row = { name: product.name, category: product.category, brand_id: product.brandId || null, brand_name: product.brandName, price: product.price, discount: product.discount, user_id: userId };
+    const row: any = {
+      name: product.name, category: product.category,
+      brand_id: product.brandId || null, brand_name: product.brandName,
+      price: product.price, discount: product.discount, user_id: userId,
+      group_id: product.groupId || null, group_name: product.groupName || '',
+      selling_price: product.sellingPrice ?? product.price ?? 0,
+      purchase_price: product.purchasePrice ?? 0,
+      hsn_sac: product.hsnSac || '',
+      tax_percent: product.taxPercent ?? 0,
+      opening_stock: product.openingStock ?? 0,
+      product_type: product.productType || 'goods',
+      unit: product.unit || 'pcs',
+    };
     if (product.id) {
       const { data: existing } = await supabase.from('products').select('id').eq('id', product.id).single();
       if (existing) {
