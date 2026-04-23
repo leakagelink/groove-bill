@@ -80,6 +80,30 @@ export type Database = {
         }
         Relationships: []
       }
+      product_groups: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           brand_id: string | null
@@ -87,9 +111,18 @@ export type Database = {
           category: string | null
           created_at: string
           discount: number
+          group_id: string | null
+          group_name: string | null
+          hsn_sac: string | null
           id: string
           name: string
+          opening_stock: number
           price: number
+          product_type: string
+          purchase_price: number
+          selling_price: number
+          tax_percent: number
+          unit: string | null
           user_id: string
         }
         Insert: {
@@ -98,9 +131,18 @@ export type Database = {
           category?: string | null
           created_at?: string
           discount?: number
+          group_id?: string | null
+          group_name?: string | null
+          hsn_sac?: string | null
           id?: string
           name: string
+          opening_stock?: number
           price?: number
+          product_type?: string
+          purchase_price?: number
+          selling_price?: number
+          tax_percent?: number
+          unit?: string | null
           user_id: string
         }
         Update: {
@@ -109,9 +151,18 @@ export type Database = {
           category?: string | null
           created_at?: string
           discount?: number
+          group_id?: string | null
+          group_name?: string | null
+          hsn_sac?: string | null
           id?: string
           name?: string
+          opening_stock?: number
           price?: number
+          product_type?: string
+          purchase_price?: number
+          selling_price?: number
+          tax_percent?: number
+          unit?: string | null
           user_id?: string
         }
         Relationships: [
