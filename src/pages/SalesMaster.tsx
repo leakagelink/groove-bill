@@ -81,10 +81,10 @@ export default function SalesMaster() {
 
   const loadData = async () => {
     try {
-      const [s, p, b, c] = await Promise.all([
-        store.getSales(), store.getProducts(), store.getBrands(), store.getCustomers()
+      const [s, p, b, c, cn] = await Promise.all([
+        store.getSales(), store.getProducts(), store.getBrands(), store.getCustomers(), store.getCreditNotes()
       ]);
-      setSales(s); setProducts(p); setBrands(b); setCustomers(c);
+      setSales(s); setProducts(p); setBrands(b); setCustomers(c); setCreditNotes(cn);
     } catch (e: any) {
       toast({ title: 'Error loading data', description: e.message, variant: 'destructive' });
     }
