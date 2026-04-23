@@ -409,10 +409,11 @@ export default function SalesMaster() {
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full grid-cols-3 sm:w-auto sm:inline-flex">
+        <TabsList className="grid w-full grid-cols-4 sm:w-auto sm:inline-flex">
           <TabsTrigger value="new">New / Recent</TabsTrigger>
           <TabsTrigger value="invoice">Sales Invoice</TabsTrigger>
           <TabsTrigger value="estimate">Estimate</TabsTrigger>
+          <TabsTrigger value="credit">Credit Notes</TabsTrigger>
         </TabsList>
 
         {/* ===== NEW / RECENT TAB ===== */}
