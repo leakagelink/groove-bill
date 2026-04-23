@@ -327,4 +327,64 @@ export const store = {
       return 'CB-0001';
     }
   },
+
+  // Credit Notes
+  getCreditNotes: async (): Promise<CreditNote[]> => {
+    const { data, error } = await (supabase.from('credit_notes' as any) as any).select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map((n: any) => ({
+      id: n.id,
+      noteNumber: n.note_number,
+      noteDate: n.note_date,
+      noteType: n.note_type,
+      refBillNo: n.ref_bill_no || '',
+      accountName: n.account_name || '',
+      city: n.city || '',
+      state: n.state || '',
+      netAmount: Number(n.net_amount || 0),
+      notes: n.notes || '',
+    }));
+  },
+  saveCreditNote: async (note: Omit<CreditNote, 'id'> & { id?: string }) => {
+    const userId = await getUserId();
+    const row: any = {
+      note_number: note.noteNumber,
+      note_date: note.noteDate,
+      note_type: note.noteType,
+      ref_bill_no: note.refBillNo || '',
+      account_name: note.accountName || '',
+      city: note.city || '',
+      state: note.state || '',
+      net_amount: note.netAmount || 0,
+      notes: note.notes || '',
+      user_id: userId,
+    };
+    if (note.id) {
+      const { data: existing } = await (supabase.from('credit_notes' as any) as any).select('id').eq('id', note.id).single();
+      if (existing) {
+        const { error } = await (supabase.from('credit_notes' as any) as any).update(row).eq('id', note.id);
+        if (error) throw error;
+        return note.id;
+      }
+    }
+    const { data, error } = await (supabase.from('credit_notes' as any) as any).insert(row).select('id').single();
+    if (error) throw error;
+    return data.id;
+  },
+  deleteCreditNote: async (id: string) => {
+    const { error } = await (supabase.from('credit_notes' as any) as any).delete().eq('id', id);
+    if (error) throw error;
+  },
+  getNextCreditNoteNumber: async (): Promise<string> => {
+    const userId = await getUserId();
+    const { data: existing } = await (supabase.from('credit_note_counters' as any) as any).select('*').eq('user_id', userId).single();
+    if (existing) {
+      const newCounter = existing.counter + 1;
+      await (supabase.from('credit_note_counters' as any) as any).update({ counter: newCounter }).eq('user_id', userId);
+      return `CN-${newCounter.toString().padStart(4, '0')}`;
+    } else {
+      await (supabase.from('credit_note_counters' as any) as any).insert({ user_id: userId, counter: 1 });
+      return 'CN-0001';
+    }
+  },
 };
