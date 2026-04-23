@@ -285,7 +285,16 @@ export default function Reports() {
 
       {/* Tabs */}
       <div className="flex gap-2 border-b pb-2 flex-wrap">
-        {([['summary', 'Summary'], ['sales', 'Sales Report'], ['purchases', 'Purchase Report'], ['closing', 'Closing Stock']] as [ReportTab, string][]).map(([key, label]) => (
+        {([
+          ['summary', 'Summary'],
+          ['sales', 'Sales Report'],
+          ['purchases', 'Purchase Report'],
+          ['sales_register', 'Sales Register'],
+          ['purchase_register', 'Purchase Register'],
+          ['payment_register', 'Payment Register'],
+          ['ledger', 'Ledger Report'],
+          ['closing', 'Closing Stock'],
+        ] as [ReportTab, string][]).map(([key, label]) => (
           <Button key={key} variant={tab === key ? 'default' : 'ghost'} size="sm" onClick={() => setTab(key)}>
             {label}
           </Button>
