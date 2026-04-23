@@ -10,6 +10,18 @@ export interface Supplier {
   email: string;
   address: string;
   gstNumber: string;
+  city?: string;
+  openingBalance?: number;
+}
+
+export type OtherAccountType = 'asset' | 'liability' | 'income' | 'expense';
+
+export interface OtherAccount {
+  id: string;
+  name: string;
+  groupName: string;
+  accountType: OtherAccountType;
+  openingBalance: number;
 }
 
 export interface ProductGroup {

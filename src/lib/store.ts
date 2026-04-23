@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Brand, Supplier, Product, Purchase, Sale, Customer, Quotation, ProductGroup } from '@/types/billing';
+import { Brand, Supplier, Product, Purchase, Sale, Customer, Quotation, ProductGroup, OtherAccount, OtherAccountType } from '@/types/billing';
 
 async function getUserId(): Promise<string> {
   const { data: { session } } = await supabase.auth.getSession();
@@ -38,11 +38,20 @@ export const store = {
   getSuppliers: async (): Promise<Supplier[]> => {
     const { data, error } = await supabase.from('suppliers').select('*').order('name');
     if (error) throw error;
-    return (data || []).map(s => ({ id: s.id, name: s.name, phone: s.phone || '', email: s.email || '', address: s.address || '', gstNumber: s.gst_number || '' }));
+    return (data || []).map((s: any) => ({
+      id: s.id, name: s.name, phone: s.phone || '', email: s.email || '',
+      address: s.address || '', gstNumber: s.gst_number || '',
+      city: s.city || '', openingBalance: Number(s.opening_balance || 0),
+    }));
   },
   saveSupplier: async (supplier: Omit<Supplier, 'id'> & { id?: string }) => {
     const userId = await getUserId();
-    const row = { name: supplier.name, phone: supplier.phone, email: supplier.email, address: supplier.address, gst_number: supplier.gstNumber, user_id: userId };
+    const row: any = {
+      name: supplier.name, phone: supplier.phone, email: supplier.email,
+      address: supplier.address, gst_number: supplier.gstNumber,
+      city: supplier.city || '', opening_balance: supplier.openingBalance ?? 0,
+      user_id: userId,
+    };
     if (supplier.id) {
       const { data: existing } = await supabase.from('suppliers').select('id').eq('id', supplier.id).single();
       if (existing) {
@@ -57,6 +66,39 @@ export const store = {
   },
   deleteSupplier: async (id: string) => {
     const { error } = await supabase.from('suppliers').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // Other Accounts
+  getOtherAccounts: async (): Promise<OtherAccount[]> => {
+    const { data, error } = await (supabase.from('other_accounts' as any) as any).select('*').order('name');
+    if (error) throw error;
+    return (data || []).map((a: any) => ({
+      id: a.id, name: a.name, groupName: a.group_name || '',
+      accountType: (a.account_type || 'asset') as OtherAccountType,
+      openingBalance: Number(a.opening_balance || 0),
+    }));
+  },
+  saveOtherAccount: async (acc: Omit<OtherAccount, 'id'> & { id?: string }) => {
+    const userId = await getUserId();
+    const row: any = {
+      name: acc.name, group_name: acc.groupName, account_type: acc.accountType,
+      opening_balance: acc.openingBalance ?? 0, user_id: userId,
+    };
+    if (acc.id) {
+      const { data: existing } = await (supabase.from('other_accounts' as any) as any).select('id').eq('id', acc.id).single();
+      if (existing) {
+        const { error } = await (supabase.from('other_accounts' as any) as any).update(row).eq('id', acc.id);
+        if (error) throw error;
+        return acc.id;
+      }
+    }
+    const { data, error } = await (supabase.from('other_accounts' as any) as any).insert(row).select('id').single();
+    if (error) throw error;
+    return data.id;
+  },
+  deleteOtherAccount: async (id: string) => {
+    const { error } = await (supabase.from('other_accounts' as any) as any).delete().eq('id', id);
     if (error) throw error;
   },
 
