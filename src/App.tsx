@@ -9,6 +9,7 @@ import type { Session } from "@supabase/supabase-js";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import ProductMaster from "./pages/ProductMaster";
+import Inventory from "./pages/Inventory";
 import BrandMaster from "./pages/BrandMaster";
 import SupplierMaster from "./pages/SupplierMaster";
 import PurchaseMaster from "./pages/PurchaseMaster";
@@ -58,6 +59,7 @@ function AppRoutes() {
     <AppLayout>
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/inventory" element={<Inventory />} />
         <Route path="/products" element={<ProductMaster />} />
         <Route path="/brands" element={<BrandMaster />} />
         <Route path="/suppliers" element={<SupplierMaster />} />

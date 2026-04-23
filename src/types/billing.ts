@@ -12,6 +12,14 @@ export interface Supplier {
   gstNumber: string;
 }
 
+export interface ProductGroup {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export type ProductType = 'goods' | 'service';
+
 export interface Product {
   id: string;
   name: string;
@@ -20,6 +28,15 @@ export interface Product {
   brandName: string;
   price: number;
   discount: number;
+  groupId?: string;
+  groupName?: string;
+  sellingPrice?: number;
+  purchasePrice?: number;
+  hsnSac?: string;
+  taxPercent?: number;
+  openingStock?: number;
+  productType?: ProductType;
+  unit?: string;
 }
 
 export interface PurchaseItem {
