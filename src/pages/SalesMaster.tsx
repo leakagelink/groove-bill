@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { store } from '@/lib/store';
-import { Sale, SaleItem, Customer, Product, Brand } from '@/types/billing';
+import { Sale, SaleItem, Customer, Product, Brand, CreditNote, CreditNoteType } from '@/types/billing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
