@@ -14,6 +14,7 @@ import Masters from "./pages/Masters";
 import BrandMaster from "./pages/BrandMaster";
 import SupplierMaster from "./pages/SupplierMaster";
 import PurchaseMaster from "./pages/PurchaseMaster";
+import Purchasing from "./pages/Purchasing";
 import SalesMaster from "./pages/SalesMaster";
 import Settings from "./pages/Settings";
 import CustomerMaster from "./pages/CustomerMaster";
@@ -66,6 +67,7 @@ function AppRoutes() {
         <Route path="/brands" element={<BrandMaster />} />
         <Route path="/suppliers" element={<SupplierMaster />} />
         <Route path="/purchases" element={<PurchaseMaster />} />
+        <Route path="/purchasing" element={<Purchasing />} />
         <Route path="/sales" element={<SalesMaster />} />
         <Route path="/customers" element={<CustomerMaster />} />
         <Route path="/quotations" element={<QuotationMaster />} />
