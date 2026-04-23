@@ -109,6 +109,21 @@ export interface Sale {
   paymentMethod: PaymentMethod;
 }
 
+export type CreditNoteType = 'sales_return' | 'discount' | 'rate_difference' | 'other';
+
+export interface CreditNote {
+  id: string;
+  noteNumber: string;
+  noteDate: string;
+  noteType: CreditNoteType;
+  refBillNo: string;
+  accountName: string;
+  city: string;
+  state: string;
+  netAmount: number;
+  notes: string;
+}
+
 export interface Quotation {
   id: string;
   quotationNumber: string;
