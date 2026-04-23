@@ -1,0 +1,5 @@
+ALTER TABLE public.customers 
+ADD COLUMN IF NOT EXISTS gstin text DEFAULT '',
+ADD COLUMN IF NOT EXISTS email text DEFAULT '',
+ADD COLUMN IF NOT EXISTS city text DEFAULT '',
+ADD COLUMN IF NOT EXISTS opening_balance numeric NOT NULL DEFAULT 0;

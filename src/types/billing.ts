@@ -65,6 +65,10 @@ export interface Customer {
   name: string;
   phone: string;
   address: string;
+  gstin?: string;
+  email?: string;
+  city?: string;
+  openingBalance?: number;
 }
 
 export interface SaleItem {

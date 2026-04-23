@@ -165,11 +165,20 @@ export const store = {
   getCustomers: async (): Promise<Customer[]> => {
     const { data, error } = await supabase.from('customers').select('*').order('name');
     if (error) throw error;
-    return (data || []).map(c => ({ id: c.id, name: c.name, phone: c.phone || '', address: c.address || '' }));
+    return (data || []).map((c: any) => ({
+      id: c.id, name: c.name, phone: c.phone || '', address: c.address || '',
+      gstin: c.gstin || '', email: c.email || '', city: c.city || '',
+      openingBalance: Number(c.opening_balance || 0),
+    }));
   },
   saveCustomer: async (customer: Omit<Customer, 'id'> & { id?: string }) => {
     const userId = await getUserId();
-    const row = { name: customer.name, phone: customer.phone, address: customer.address, user_id: userId };
+    const row: any = {
+      name: customer.name, phone: customer.phone, address: customer.address,
+      gstin: customer.gstin || '', email: customer.email || '', city: customer.city || '',
+      opening_balance: customer.openingBalance ?? 0,
+      user_id: userId,
+    };
     if (customer.id) {
       const { data: existing } = await supabase.from('customers').select('id').eq('id', customer.id).single();
       if (existing) {
@@ -181,6 +190,10 @@ export const store = {
     const { data, error } = await supabase.from('customers').insert(row).select('id').single();
     if (error) throw error;
     return data.id;
+  },
+  deleteCustomer: async (id: string) => {
+    const { error } = await supabase.from('customers').delete().eq('id', id);
+    if (error) throw error;
   },
 
   // Sales
