@@ -124,6 +124,21 @@ export interface CreditNote {
   notes: string;
 }
 
+export type DebitNoteType = 'purchase_return' | 'discount' | 'rate_difference' | 'other';
+
+export interface DebitNote {
+  id: string;
+  noteNumber: string;
+  noteDate: string;
+  noteType: DebitNoteType;
+  refBillNo: string;
+  accountName: string;
+  city: string;
+  state: string;
+  netAmount: number;
+  notes: string;
+}
+
 export interface Quotation {
   id: string;
   quotationNumber: string;
