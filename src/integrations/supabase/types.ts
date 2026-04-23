@@ -137,6 +137,69 @@ export type Database = {
         }
         Relationships: []
       }
+      debit_note_counters: {
+        Row: {
+          counter: number
+          id: string
+          user_id: string
+        }
+        Insert: {
+          counter?: number
+          id?: string
+          user_id: string
+        }
+        Update: {
+          counter?: number
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      debit_notes: {
+        Row: {
+          account_name: string
+          city: string | null
+          created_at: string
+          id: string
+          net_amount: number
+          note_date: string
+          note_number: string
+          note_type: string
+          notes: string | null
+          ref_bill_no: string | null
+          state: string | null
+          user_id: string
+        }
+        Insert: {
+          account_name?: string
+          city?: string | null
+          created_at?: string
+          id?: string
+          net_amount?: number
+          note_date: string
+          note_number: string
+          note_type?: string
+          notes?: string | null
+          ref_bill_no?: string | null
+          state?: string | null
+          user_id: string
+        }
+        Update: {
+          account_name?: string
+          city?: string | null
+          created_at?: string
+          id?: string
+          net_amount?: number
+          note_date?: string
+          note_number?: string
+          note_type?: string
+          notes?: string | null
+          ref_bill_no?: string | null
+          state?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       invoice_counters: {
         Row: {
           counter: number
