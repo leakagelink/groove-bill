@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { store } from '@/lib/store';
-import { Sale, SaleItem, Customer, Product, Brand } from '@/types/billing';
+import { Sale, SaleItem, Customer, Product, Brand, CreditNote, CreditNoteType } from '@/types/billing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -20,7 +20,23 @@ export default function SalesMaster() {
   const { toast } = useToast();
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<'new' | 'invoice' | 'estimate'>('new');
+  const [activeTab, setActiveTab] = useState<'new' | 'invoice' | 'estimate' | 'credit'>('new');
+
+  // Credit notes state
+  const [creditNotes, setCreditNotes] = useState<CreditNote[]>([]);
+  const [selectedCreditIds, setSelectedCreditIds] = useState<Set<string>>(new Set());
+  const [filterNoteType, setFilterNoteType] = useState<'all' | CreditNoteType>('all');
+  const [showCreditForm, setShowCreditForm] = useState(false);
+  const [editingCredit, setEditingCredit] = useState<CreditNote | null>(null);
+  const [cnNumber, setCnNumber] = useState('');
+  const [cnDate, setCnDate] = useState(new Date().toISOString().split('T')[0]);
+  const [cnType, setCnType] = useState<CreditNoteType>('sales_return');
+  const [cnRefBill, setCnRefBill] = useState('');
+  const [cnAccount, setCnAccount] = useState('');
+  const [cnCity, setCnCity] = useState('');
+  const [cnState, setCnState] = useState('');
+  const [cnAmount, setCnAmount] = useState(0);
+  const [cnNotes, setCnNotes] = useState('');
 
   // Filters
   const [fromDate, setFromDate] = useState('');
@@ -65,10 +81,10 @@ export default function SalesMaster() {
 
   const loadData = async () => {
     try {
-      const [s, p, b, c] = await Promise.all([
-        store.getSales(), store.getProducts(), store.getBrands(), store.getCustomers()
+      const [s, p, b, c, cn] = await Promise.all([
+        store.getSales(), store.getProducts(), store.getBrands(), store.getCustomers(), store.getCreditNotes()
       ]);
-      setSales(s); setProducts(p); setBrands(b); setCustomers(c);
+      setSales(s); setProducts(p); setBrands(b); setCustomers(c); setCreditNotes(cn);
     } catch (e: any) {
       toast({ title: 'Error loading data', description: e.message, variant: 'destructive' });
     }
@@ -393,10 +409,11 @@ export default function SalesMaster() {
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full grid-cols-3 sm:w-auto sm:inline-flex">
+        <TabsList className="grid w-full grid-cols-4 sm:w-auto sm:inline-flex">
           <TabsTrigger value="new">New / Recent</TabsTrigger>
           <TabsTrigger value="invoice">Sales Invoice</TabsTrigger>
           <TabsTrigger value="estimate">Estimate</TabsTrigger>
+          <TabsTrigger value="credit">Credit Notes</TabsTrigger>
         </TabsList>
 
         {/* ===== NEW / RECENT TAB ===== */}
@@ -709,6 +726,264 @@ export default function SalesMaster() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* ===== CREDIT NOTES TAB ===== */}
+        <TabsContent value="credit" className="space-y-4">
+          {showCreditForm && (
+            <div className="bg-card rounded-lg border p-5 space-y-4">
+              <h3 className="font-semibold text-foreground">{editingCredit ? `Edit Credit Note - ${editingCredit.noteNumber}` : 'New Credit Note'}</h3>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">Note No</label>
+                  <Input value={cnNumber} onChange={e => setCnNumber(e.target.value)} placeholder="Auto" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Note Date</label>
+                  <Input type="date" value={cnDate} onChange={e => setCnDate(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Note Type</label>
+                  <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={cnType} onChange={e => setCnType(e.target.value as CreditNoteType)}>
+                    <option value="sales_return">Sales Return</option>
+                    <option value="discount">Discount</option>
+                    <option value="rate_difference">Rate Difference</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Ref Bill No</label>
+                  <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={cnRefBill} onChange={e => {
+                    const inv = e.target.value;
+                    setCnRefBill(inv);
+                    const sale = sales.find(s => s.invoiceNumber === inv);
+                    if (sale) {
+                      setCnAccount(sale.customerName);
+                      setCnCity(getCustomerCity(sale));
+                      setCnState(getCustomerState(sale));
+                    }
+                  }}>
+                    <option value="">Select Bill (optional)</option>
+                    {sales.map(s => <option key={s.id} value={s.invoiceNumber}>{s.invoiceNumber} - {s.customerName}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Account Name *</label>
+                  <Input value={cnAccount} onChange={e => setCnAccount(e.target.value)} list="cn-customers" />
+                  <datalist id="cn-customers">
+                    {customers.map(c => <option key={c.id} value={c.name} />)}
+                  </datalist>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">City</label>
+                  <Input value={cnCity} onChange={e => setCnCity(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">State</label>
+                  <Input value={cnState} onChange={e => setCnState(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Net Amount (₹) *</label>
+                  <Input type="number" value={cnAmount || ''} onChange={e => setCnAmount(parseFloat(e.target.value) || 0)} />
+                </div>
+                <div className="sm:col-span-2 lg:col-span-4">
+                  <label className="text-xs text-muted-foreground">Notes</label>
+                  <Input value={cnNotes} onChange={e => setCnNotes(e.target.value)} />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={async () => {
+                  if (!cnAccount.trim() || !cnAmount) {
+                    toast({ title: 'Account name and amount required', variant: 'destructive' });
+                    return;
+                  }
+                  try {
+                    let noteNumber = cnNumber;
+                    if (!editingCredit && !noteNumber) noteNumber = await store.getNextCreditNoteNumber();
+                    await store.saveCreditNote({
+                      id: editingCredit?.id,
+                      noteNumber, noteDate: cnDate, noteType: cnType,
+                      refBillNo: cnRefBill, accountName: cnAccount,
+                      city: cnCity, state: cnState, netAmount: cnAmount, notes: cnNotes,
+                    });
+                    setCreditNotes(await store.getCreditNotes());
+                    setShowCreditForm(false); setEditingCredit(null);
+                    setCnNumber(''); setCnRefBill(''); setCnAccount(''); setCnCity(''); setCnState('');
+                    setCnAmount(0); setCnNotes(''); setCnType('sales_return');
+                    setCnDate(new Date().toISOString().split('T')[0]);
+                    toast({ title: editingCredit ? 'Credit note updated!' : 'Credit note saved!' });
+                  } catch (e: any) {
+                    toast({ title: 'Error saving credit note', description: e.message, variant: 'destructive' });
+                  }
+                }}>
+                  <Check size={14} className="mr-1" /> {editingCredit ? 'Update' : 'Save'}
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  setShowCreditForm(false); setEditingCredit(null);
+                }}><X size={14} className="mr-1" /> Cancel</Button>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-card rounded-lg border">
+            <div className="p-4 border-b space-y-3">
+              <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between">
+                <div className="relative flex-1">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input placeholder="Search note no / account / ref bill..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
+                    <Filter size={14} className="mr-1" /> Filters
+                  </Button>
+                  {(fromDate || toDate || filterCity || filterNoteType !== 'all') && (
+                    <Button variant="ghost" size="sm" onClick={() => { clearFilters(); setFilterNoteType('all'); }}>
+                      <X size={14} className="mr-1" /> Clear
+                    </Button>
+                  )}
+                  <Button size="sm" onClick={() => { setEditingCredit(null); setShowCreditForm(true); }}>
+                    <Plus size={14} className="mr-1" /> New Note
+                  </Button>
+                </div>
+              </div>
+              {showFilters && (
+                <div className="grid sm:grid-cols-4 gap-2 pt-2 border-t">
+                  <div>
+                    <label className="text-xs text-muted-foreground">From Date</label>
+                    <Input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">To Date</label>
+                    <Input type="date" value={toDate} onChange={e => setToDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">City</label>
+                    <Input placeholder="Filter by city" value={filterCity} onChange={e => setFilterCity(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Note Type</label>
+                    <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={filterNoteType} onChange={e => setFilterNoteType(e.target.value as any)}>
+                      <option value="all">All Types</option>
+                      <option value="sales_return">Sales Return</option>
+                      <option value="discount">Discount</option>
+                      <option value="rate_difference">Rate Difference</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+              {(() => {
+                const filteredNotes = creditNotes.filter(n => {
+                  if (search) {
+                    const q = search.toLowerCase();
+                    if (!n.noteNumber.toLowerCase().includes(q) && !n.accountName.toLowerCase().includes(q) && !(n.refBillNo || '').toLowerCase().includes(q)) return false;
+                  }
+                  if (fromDate && n.noteDate < fromDate) return false;
+                  if (toDate && n.noteDate > toDate) return false;
+                  if (filterCity && !(n.city || '').toLowerCase().includes(filterCity.toLowerCase())) return false;
+                  if (filterNoteType !== 'all' && n.noteType !== filterNoteType) return false;
+                  return true;
+                });
+                if (selectedCreditIds.size === 0) return null;
+                return (
+                  <div className="text-sm text-muted-foreground">
+                    {selectedCreditIds.size} selected · Total: ₹{filteredNotes.filter(n => selectedCreditIds.has(n.id)).reduce((sum, n) => sum + n.netAmount, 0).toLocaleString('en-IN')}
+                    <Button variant="ghost" size="sm" className="ml-2" onClick={async () => {
+                      if (!confirm(`Delete ${selectedCreditIds.size} credit note(s)?`)) return;
+                      try {
+                        for (const id of Array.from(selectedCreditIds)) await store.deleteCreditNote(id);
+                        setCreditNotes(await store.getCreditNotes());
+                        setSelectedCreditIds(new Set());
+                        toast({ title: 'Deleted' });
+                      } catch (e: any) {
+                        toast({ title: 'Error deleting', description: e.message, variant: 'destructive' });
+                      }
+                    }}><Trash2 size={14} className="text-destructive" /></Button>
+                  </div>
+                );
+              })()}
+            </div>
+
+            <div className="overflow-x-auto">
+              {(() => {
+                const filteredNotes = creditNotes.filter(n => {
+                  if (search) {
+                    const q = search.toLowerCase();
+                    if (!n.noteNumber.toLowerCase().includes(q) && !n.accountName.toLowerCase().includes(q) && !(n.refBillNo || '').toLowerCase().includes(q)) return false;
+                  }
+                  if (fromDate && n.noteDate < fromDate) return false;
+                  if (toDate && n.noteDate > toDate) return false;
+                  if (filterCity && !(n.city || '').toLowerCase().includes(filterCity.toLowerCase())) return false;
+                  if (filterNoteType !== 'all' && n.noteType !== filterNoteType) return false;
+                  return true;
+                });
+                const allSelected = filteredNotes.length > 0 && selectedCreditIds.size === filteredNotes.length;
+                const typeLabel = (t: string) => ({ sales_return: 'Sales Return', discount: 'Discount', rate_difference: 'Rate Diff', other: 'Other' } as any)[t] || t;
+                return (
+                  <table className="w-full text-sm">
+                    <thead><tr className="border-b bg-muted/50">
+                      <th className="p-3 w-10">
+                        <Checkbox checked={allSelected} onCheckedChange={() => {
+                          if (allSelected) setSelectedCreditIds(new Set());
+                          else setSelectedCreditIds(new Set(filteredNotes.map(n => n.id)));
+                        }} />
+                      </th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Note No</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Note Date</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Note Type</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Ref Bill No</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Account Name</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">City</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">State</th>
+                      <th className="text-right p-3 font-medium text-muted-foreground">Net Amount</th>
+                      <th className="text-right p-3 font-medium text-muted-foreground">Action</th>
+                    </tr></thead>
+                    <tbody className="divide-y">
+                      {filteredNotes.length === 0 && <tr><td colSpan={10} className="p-4 text-muted-foreground text-center">No credit notes found</td></tr>}
+                      {filteredNotes.map(n => (
+                        <tr key={n.id} className="hover:bg-muted/30">
+                          <td className="p-3">
+                            <Checkbox checked={selectedCreditIds.has(n.id)} onCheckedChange={() => {
+                              const next = new Set(selectedCreditIds);
+                              if (next.has(n.id)) next.delete(n.id); else next.add(n.id);
+                              setSelectedCreditIds(next);
+                            }} />
+                          </td>
+                          <td className="p-3 font-mono text-primary">{n.noteNumber}</td>
+                          <td className="p-3 text-foreground whitespace-nowrap">{new Date(n.noteDate).toLocaleDateString('en-IN')}</td>
+                          <td className="p-3 text-muted-foreground">{typeLabel(n.noteType)}</td>
+                          <td className="p-3 font-mono text-muted-foreground">{n.refBillNo || '-'}</td>
+                          <td className="p-3 font-medium text-foreground">{n.accountName}</td>
+                          <td className="p-3 text-muted-foreground">{n.city || '-'}</td>
+                          <td className="p-3 text-muted-foreground">{n.state || '-'}</td>
+                          <td className="p-3 text-right font-medium text-foreground">₹{n.netAmount.toLocaleString('en-IN')}</td>
+                          <td className="p-3 text-right whitespace-nowrap">
+                            <Button variant="ghost" size="sm" onClick={() => {
+                              setEditingCredit(n);
+                              setCnNumber(n.noteNumber); setCnDate(n.noteDate); setCnType(n.noteType);
+                              setCnRefBill(n.refBillNo); setCnAccount(n.accountName);
+                              setCnCity(n.city); setCnState(n.state); setCnAmount(n.netAmount); setCnNotes(n.notes);
+                              setShowCreditForm(true);
+                            }}><Pencil size={14} /></Button>
+                            <Button variant="ghost" size="sm" onClick={async () => {
+                              if (!confirm('Delete this credit note?')) return;
+                              try {
+                                await store.deleteCreditNote(n.id);
+                                setCreditNotes(await store.getCreditNotes());
+                                toast({ title: 'Deleted' });
+                              } catch (e: any) {
+                                toast({ title: 'Error', description: e.message, variant: 'destructive' });
+                              }
+                            }}><Trash2 size={14} className="text-destructive" /></Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                );
+              })()}
             </div>
           </div>
         </TabsContent>
