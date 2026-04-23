@@ -20,7 +20,23 @@ export default function SalesMaster() {
   const { toast } = useToast();
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<'new' | 'invoice' | 'estimate'>('new');
+  const [activeTab, setActiveTab] = useState<'new' | 'invoice' | 'estimate' | 'credit'>('new');
+
+  // Credit notes state
+  const [creditNotes, setCreditNotes] = useState<CreditNote[]>([]);
+  const [selectedCreditIds, setSelectedCreditIds] = useState<Set<string>>(new Set());
+  const [filterNoteType, setFilterNoteType] = useState<'all' | CreditNoteType>('all');
+  const [showCreditForm, setShowCreditForm] = useState(false);
+  const [editingCredit, setEditingCredit] = useState<CreditNote | null>(null);
+  const [cnNumber, setCnNumber] = useState('');
+  const [cnDate, setCnDate] = useState(new Date().toISOString().split('T')[0]);
+  const [cnType, setCnType] = useState<CreditNoteType>('sales_return');
+  const [cnRefBill, setCnRefBill] = useState('');
+  const [cnAccount, setCnAccount] = useState('');
+  const [cnCity, setCnCity] = useState('');
+  const [cnState, setCnState] = useState('');
+  const [cnAmount, setCnAmount] = useState(0);
+  const [cnNotes, setCnNotes] = useState('');
 
   // Filters
   const [fromDate, setFromDate] = useState('');
