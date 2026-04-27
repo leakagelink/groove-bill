@@ -236,6 +236,77 @@ export default function Reports() {
     return products.filter(p => p.groupId === csGroupId);
   }, [products, csGroupId]);
 
+  // GSTR-1 rows: per-invoice tax split (CGST+SGST for intra-state, IGST for inter-state)
+  const gstr1Rows = useMemo(() => {
+    const customerById: Record<string, Customer> = {};
+    customers.forEach(c => { customerById[c.id] = c; });
+    const productById: Record<string, Product> = {};
+    products.forEach(p => { productById[p.id] = p; });
+
+    return filteredSales.map(s => {
+      const cust = customerById[s.customerId];
+      const gstin = (cust?.gstin || '').trim();
+      const custStateCode = gstin.substring(0, 2);
+      const isInterState = !!custStateCode && custStateCode !== homeStateCode;
+
+      let taxableValue = 0;
+      let totalTax = 0;
+      let cgst = 0, sgst = 0, igst = 0;
+
+      s.items.forEach(it => {
+        const prod = productById[it.productId];
+        const taxPct = Number(prod?.taxPercent || 0);
+        const lineTaxable = Number(it.total || 0);
+        const lineTax = lineTaxable * taxPct / 100;
+        taxableValue += lineTaxable;
+        totalTax += lineTax;
+        if (isInterState) {
+          igst += lineTax;
+        } else {
+          cgst += lineTax / 2;
+          sgst += lineTax / 2;
+        }
+      });
+
+      return {
+        id: s.id,
+        invoiceNumber: s.invoiceNumber,
+        date: s.date,
+        customerName: s.customerName || 'Unregistered',
+        gstin: gstin || '-',
+        stateCode: custStateCode || '-',
+        isInterState,
+        taxableValue,
+        cgst, sgst, igst,
+        totalTax,
+        invoiceValue: taxableValue + totalTax,
+      };
+    });
+  }, [filteredSales, customers, products, homeStateCode]);
+
+  const gstr1Totals = useMemo(() => {
+    return gstr1Rows.reduce((acc, r) => ({
+      taxable: acc.taxable + r.taxableValue,
+      cgst: acc.cgst + r.cgst,
+      sgst: acc.sgst + r.sgst,
+      igst: acc.igst + r.igst,
+      tax: acc.tax + r.totalTax,
+      value: acc.value + r.invoiceValue,
+    }), { taxable: 0, cgst: 0, sgst: 0, igst: 0, tax: 0, value: 0 });
+  }, [gstr1Rows]);
+
+  const downloadGstr1CSV = () => {
+    let csv = 'Invoice,Date,Customer,GSTIN,State Code,Supply Type,Taxable Value,CGST,SGST,IGST,Total Tax,Invoice Value\n';
+    gstr1Rows.forEach(r => {
+      csv += `${r.invoiceNumber},${r.date},"${r.customerName}",${r.gstin},${r.stateCode},${r.isInterState ? 'Inter-State' : 'Intra-State'},${r.taxableValue.toFixed(2)},${r.cgst.toFixed(2)},${r.sgst.toFixed(2)},${r.igst.toFixed(2)},${r.totalTax.toFixed(2)},${r.invoiceValue.toFixed(2)}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'gstr1-report.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
