@@ -15,6 +15,7 @@ export default function Reports() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [groups, setGroups] = useState<ProductGroup[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [tab, setTab] = useState<ReportTab>('summary');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -28,6 +29,9 @@ export default function Reports() {
   const [csOnlyNegative, setCsOnlyNegative] = useState(false);
   const [csShowZero, setCsShowZero] = useState(true);
   const [csIncludeAccount, setCsIncludeAccount] = useState(false);
+
+  // GSTR-1 settings
+  const [homeStateCode, setHomeStateCode] = useState<string>(() => localStorage.getItem('gstr_home_state') || '08');
 
   const { toast } = useToast();
 
