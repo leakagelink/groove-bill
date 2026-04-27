@@ -38,10 +38,10 @@ export default function Reports() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [s, p, pr, g] = await Promise.all([
-          store.getSales(), store.getPurchases(), store.getProducts(), store.getProductGroups()
+        const [s, p, pr, g, c] = await Promise.all([
+          store.getSales(), store.getPurchases(), store.getProducts(), store.getProductGroups(), store.getCustomers()
         ]);
-        setSales(s); setPurchases(p); setProducts(pr); setGroups(g);
+        setSales(s); setPurchases(p); setProducts(pr); setGroups(g); setCustomers(c);
       } catch (e: any) {
         toast({ title: 'Error loading data', description: e.message, variant: 'destructive' });
       }
