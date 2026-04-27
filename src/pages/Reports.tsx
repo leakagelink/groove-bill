@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { store } from '@/lib/store';
-import { Sale, Purchase, Product, ProductGroup } from '@/types/billing';
+import { Sale, Purchase, Product, ProductGroup, Customer } from '@/types/billing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Download, Filter, TrendingUp, TrendingDown, IndianRupee, BarChart3, Package } from 'lucide-react';
+import { Download, Filter, TrendingUp, TrendingDown, IndianRupee, BarChart3, Package, FileText } from 'lucide-react';
 
-type ReportTab = 'sales' | 'purchases' | 'summary' | 'closing';
+type ReportTab = 'sales' | 'purchases' | 'summary' | 'closing' | 'gstr1';
 type ViewType = 'summary' | 'detailed';
 
 export default function Reports() {
