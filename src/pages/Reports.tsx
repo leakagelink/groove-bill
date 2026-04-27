@@ -690,6 +690,118 @@ export default function Reports() {
           </div>
         </div>
       )}
+
+      {/* GSTR-1 Tab */}
+      {tab === 'gstr1' && (
+        <div className="space-y-4">
+          <div className="bg-card rounded-lg border p-4 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <FileText size={16} /> GSTR-1 Settings
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-xs text-muted-foreground">Home State Code (first 2 digits of your GSTIN)</label>
+                <Input
+                  value={homeStateCode}
+                  onChange={e => {
+                    const v = e.target.value.replace(/\D/g, '').slice(0, 2);
+                    setHomeStateCode(v);
+                    localStorage.setItem('gstr_home_state', v);
+                  }}
+                  placeholder="e.g. 08 for Rajasthan"
+                  className="h-9"
+                />
+                <p className="text-[11px] text-muted-foreground mt-1">Customers with a different state code will be treated as Inter-State (IGST).</p>
+              </div>
+              <div className="flex items-end">
+                <Button variant="outline" size="sm" onClick={downloadGstr1CSV} className="h-9">
+                  <Download size={14} className="mr-1" /> Export CSV
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Summary cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+            <div className="bg-card rounded-lg border p-4">
+              <div className="text-xs text-muted-foreground">Taxable Value</div>
+              <p className="text-lg font-bold text-foreground mt-1">₹{gstr1Totals.taxable.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+            </div>
+            <div className="bg-card rounded-lg border p-4">
+              <div className="text-xs text-muted-foreground">CGST</div>
+              <p className="text-lg font-bold text-foreground mt-1">₹{gstr1Totals.cgst.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+            </div>
+            <div className="bg-card rounded-lg border p-4">
+              <div className="text-xs text-muted-foreground">SGST</div>
+              <p className="text-lg font-bold text-foreground mt-1">₹{gstr1Totals.sgst.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+            </div>
+            <div className="bg-card rounded-lg border p-4">
+              <div className="text-xs text-muted-foreground">IGST</div>
+              <p className="text-lg font-bold text-foreground mt-1">₹{gstr1Totals.igst.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+            </div>
+            <div className="bg-card rounded-lg border p-4">
+              <div className="text-xs text-muted-foreground">Invoice Value</div>
+              <p className="text-lg font-bold text-foreground mt-1">₹{gstr1Totals.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+            </div>
+          </div>
+
+          <div className="bg-card rounded-lg border overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/30 border-b">
+                <tr className="text-left">
+                  <th className="p-3 text-foreground">Invoice</th>
+                  <th className="p-3 text-foreground">Date</th>
+                  <th className="p-3 text-foreground">Customer</th>
+                  <th className="p-3 text-foreground">GSTIN</th>
+                  <th className="p-3 text-foreground">State</th>
+                  <th className="p-3 text-foreground">Supply</th>
+                  <th className="p-3 text-right text-foreground">Taxable</th>
+                  <th className="p-3 text-right text-foreground">CGST</th>
+                  <th className="p-3 text-right text-foreground">SGST</th>
+                  <th className="p-3 text-right text-foreground">IGST</th>
+                  <th className="p-3 text-right text-foreground">Invoice Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gstr1Rows.length === 0 && (
+                  <tr><td colSpan={11} className="p-6 text-center text-muted-foreground">No sales found for selected period</td></tr>
+                )}
+                {gstr1Rows.map(r => (
+                  <tr key={r.id} className="border-t hover:bg-muted/20">
+                    <td className="p-3 font-medium text-foreground">{r.invoiceNumber}</td>
+                    <td className="p-3 text-muted-foreground">{r.date}</td>
+                    <td className="p-3 text-foreground">{r.customerName}</td>
+                    <td className="p-3 text-muted-foreground text-xs">{r.gstin}</td>
+                    <td className="p-3 text-muted-foreground">{r.stateCode}</td>
+                    <td className="p-3">
+                      <span className={`text-xs px-2 py-0.5 rounded ${r.isInterState ? 'bg-blue-500/15 text-blue-600' : 'bg-green-500/15 text-green-600'}`}>
+                        {r.isInterState ? 'Inter' : 'Intra'}
+                      </span>
+                    </td>
+                    <td className="p-3 text-right text-foreground">₹{r.taxableValue.toFixed(2)}</td>
+                    <td className="p-3 text-right text-foreground">₹{r.cgst.toFixed(2)}</td>
+                    <td className="p-3 text-right text-foreground">₹{r.sgst.toFixed(2)}</td>
+                    <td className="p-3 text-right text-foreground">₹{r.igst.toFixed(2)}</td>
+                    <td className="p-3 text-right font-semibold text-foreground">₹{r.invoiceValue.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              {gstr1Rows.length > 0 && (
+                <tfoot>
+                  <tr className="border-t bg-muted/30 font-semibold">
+                    <td colSpan={6} className="p-3 text-foreground">Total</td>
+                    <td className="p-3 text-right text-foreground">₹{gstr1Totals.taxable.toFixed(2)}</td>
+                    <td className="p-3 text-right text-foreground">₹{gstr1Totals.cgst.toFixed(2)}</td>
+                    <td className="p-3 text-right text-foreground">₹{gstr1Totals.sgst.toFixed(2)}</td>
+                    <td className="p-3 text-right text-foreground">₹{gstr1Totals.igst.toFixed(2)}</td>
+                    <td className="p-3 text-right text-foreground">₹{gstr1Totals.value.toFixed(2)}</td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
