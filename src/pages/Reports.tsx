@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { store } from '@/lib/store';
-import { Sale, Purchase, Product, ProductGroup } from '@/types/billing';
+import { Sale, Purchase, Product, ProductGroup, Customer } from '@/types/billing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Download, Filter, TrendingUp, TrendingDown, IndianRupee, BarChart3, Package } from 'lucide-react';
+import { Download, Filter, TrendingUp, TrendingDown, IndianRupee, BarChart3, Package, FileText } from 'lucide-react';
 
-type ReportTab = 'sales' | 'purchases' | 'summary' | 'closing';
+type ReportTab = 'sales' | 'purchases' | 'summary' | 'closing' | 'gstr1';
 type ViewType = 'summary' | 'detailed';
 
 export default function Reports() {
@@ -15,6 +15,7 @@ export default function Reports() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [groups, setGroups] = useState<ProductGroup[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [tab, setTab] = useState<ReportTab>('summary');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -29,15 +30,18 @@ export default function Reports() {
   const [csShowZero, setCsShowZero] = useState(true);
   const [csIncludeAccount, setCsIncludeAccount] = useState(false);
 
+  // GSTR-1 settings
+  const [homeStateCode, setHomeStateCode] = useState<string>(() => localStorage.getItem('gstr_home_state') || '08');
+
   const { toast } = useToast();
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [s, p, pr, g] = await Promise.all([
-          store.getSales(), store.getPurchases(), store.getProducts(), store.getProductGroups()
+        const [s, p, pr, g, c] = await Promise.all([
+          store.getSales(), store.getPurchases(), store.getProducts(), store.getProductGroups(), store.getCustomers()
         ]);
-        setSales(s); setPurchases(p); setProducts(pr); setGroups(g);
+        setSales(s); setPurchases(p); setProducts(pr); setGroups(g); setCustomers(c);
       } catch (e: any) {
         toast({ title: 'Error loading data', description: e.message, variant: 'destructive' });
       }
@@ -232,6 +236,77 @@ export default function Reports() {
     return products.filter(p => p.groupId === csGroupId);
   }, [products, csGroupId]);
 
+  // GSTR-1 rows: per-invoice tax split (CGST+SGST for intra-state, IGST for inter-state)
+  const gstr1Rows = useMemo(() => {
+    const customerById: Record<string, Customer> = {};
+    customers.forEach(c => { customerById[c.id] = c; });
+    const productById: Record<string, Product> = {};
+    products.forEach(p => { productById[p.id] = p; });
+
+    return filteredSales.map(s => {
+      const cust = customerById[s.customerId];
+      const gstin = (cust?.gstin || '').trim();
+      const custStateCode = gstin.substring(0, 2);
+      const isInterState = !!custStateCode && custStateCode !== homeStateCode;
+
+      let taxableValue = 0;
+      let totalTax = 0;
+      let cgst = 0, sgst = 0, igst = 0;
+
+      s.items.forEach(it => {
+        const prod = productById[it.productId];
+        const taxPct = Number(prod?.taxPercent || 0);
+        const lineTaxable = Number(it.total || 0);
+        const lineTax = lineTaxable * taxPct / 100;
+        taxableValue += lineTaxable;
+        totalTax += lineTax;
+        if (isInterState) {
+          igst += lineTax;
+        } else {
+          cgst += lineTax / 2;
+          sgst += lineTax / 2;
+        }
+      });
+
+      return {
+        id: s.id,
+        invoiceNumber: s.invoiceNumber,
+        date: s.date,
+        customerName: s.customerName || 'Unregistered',
+        gstin: gstin || '-',
+        stateCode: custStateCode || '-',
+        isInterState,
+        taxableValue,
+        cgst, sgst, igst,
+        totalTax,
+        invoiceValue: taxableValue + totalTax,
+      };
+    });
+  }, [filteredSales, customers, products, homeStateCode]);
+
+  const gstr1Totals = useMemo(() => {
+    return gstr1Rows.reduce((acc, r) => ({
+      taxable: acc.taxable + r.taxableValue,
+      cgst: acc.cgst + r.cgst,
+      sgst: acc.sgst + r.sgst,
+      igst: acc.igst + r.igst,
+      tax: acc.tax + r.totalTax,
+      value: acc.value + r.invoiceValue,
+    }), { taxable: 0, cgst: 0, sgst: 0, igst: 0, tax: 0, value: 0 });
+  }, [gstr1Rows]);
+
+  const downloadGstr1CSV = () => {
+    let csv = 'Invoice,Date,Customer,GSTIN,State Code,Supply Type,Taxable Value,CGST,SGST,IGST,Total Tax,Invoice Value\n';
+    gstr1Rows.forEach(r => {
+      csv += `${r.invoiceNumber},${r.date},"${r.customerName}",${r.gstin},${r.stateCode},${r.isInterState ? 'Inter-State' : 'Intra-State'},${r.taxableValue.toFixed(2)},${r.cgst.toFixed(2)},${r.sgst.toFixed(2)},${r.igst.toFixed(2)},${r.totalTax.toFixed(2)},${r.invoiceValue.toFixed(2)}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'gstr1-report.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -282,7 +357,7 @@ export default function Reports() {
 
       {/* Tabs */}
       <div className="flex gap-2 border-b pb-2 flex-wrap">
-        {([['summary', 'Summary'], ['sales', 'Sales Report'], ['purchases', 'Purchase Report'], ['closing', 'Closing Stock']] as [ReportTab, string][]).map(([key, label]) => (
+        {([['summary', 'Summary'], ['sales', 'Sales Report'], ['purchases', 'Purchase Report'], ['closing', 'Closing Stock'], ['gstr1', 'GSTR-1']] as [ReportTab, string][]).map(([key, label]) => (
           <Button key={key} variant={tab === key ? 'default' : 'ghost'} size="sm" onClick={() => setTab(key)}>
             {label}
           </Button>
@@ -608,6 +683,118 @@ export default function Reports() {
                     <td className="p-3 text-right text-foreground">{closingTotalQty}</td>
                     <td colSpan={2}></td>
                     <td className="p-3 text-right text-foreground">₹{closingTotalValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* GSTR-1 Tab */}
+      {tab === 'gstr1' && (
+        <div className="space-y-4">
+          <div className="bg-card rounded-lg border p-4 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <FileText size={16} /> GSTR-1 Settings
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-xs text-muted-foreground">Home State Code (first 2 digits of your GSTIN)</label>
+                <Input
+                  value={homeStateCode}
+                  onChange={e => {
+                    const v = e.target.value.replace(/\D/g, '').slice(0, 2);
+                    setHomeStateCode(v);
+                    localStorage.setItem('gstr_home_state', v);
+                  }}
+                  placeholder="e.g. 08 for Rajasthan"
+                  className="h-9"
+                />
+                <p className="text-[11px] text-muted-foreground mt-1">Customers with a different state code will be treated as Inter-State (IGST).</p>
+              </div>
+              <div className="flex items-end">
+                <Button variant="outline" size="sm" onClick={downloadGstr1CSV} className="h-9">
+                  <Download size={14} className="mr-1" /> Export CSV
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Summary cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+            <div className="bg-card rounded-lg border p-4">
+              <div className="text-xs text-muted-foreground">Taxable Value</div>
+              <p className="text-lg font-bold text-foreground mt-1">₹{gstr1Totals.taxable.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+            </div>
+            <div className="bg-card rounded-lg border p-4">
+              <div className="text-xs text-muted-foreground">CGST</div>
+              <p className="text-lg font-bold text-foreground mt-1">₹{gstr1Totals.cgst.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+            </div>
+            <div className="bg-card rounded-lg border p-4">
+              <div className="text-xs text-muted-foreground">SGST</div>
+              <p className="text-lg font-bold text-foreground mt-1">₹{gstr1Totals.sgst.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+            </div>
+            <div className="bg-card rounded-lg border p-4">
+              <div className="text-xs text-muted-foreground">IGST</div>
+              <p className="text-lg font-bold text-foreground mt-1">₹{gstr1Totals.igst.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+            </div>
+            <div className="bg-card rounded-lg border p-4">
+              <div className="text-xs text-muted-foreground">Invoice Value</div>
+              <p className="text-lg font-bold text-foreground mt-1">₹{gstr1Totals.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+            </div>
+          </div>
+
+          <div className="bg-card rounded-lg border overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/30 border-b">
+                <tr className="text-left">
+                  <th className="p-3 text-foreground">Invoice</th>
+                  <th className="p-3 text-foreground">Date</th>
+                  <th className="p-3 text-foreground">Customer</th>
+                  <th className="p-3 text-foreground">GSTIN</th>
+                  <th className="p-3 text-foreground">State</th>
+                  <th className="p-3 text-foreground">Supply</th>
+                  <th className="p-3 text-right text-foreground">Taxable</th>
+                  <th className="p-3 text-right text-foreground">CGST</th>
+                  <th className="p-3 text-right text-foreground">SGST</th>
+                  <th className="p-3 text-right text-foreground">IGST</th>
+                  <th className="p-3 text-right text-foreground">Invoice Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gstr1Rows.length === 0 && (
+                  <tr><td colSpan={11} className="p-6 text-center text-muted-foreground">No sales found for selected period</td></tr>
+                )}
+                {gstr1Rows.map(r => (
+                  <tr key={r.id} className="border-t hover:bg-muted/20">
+                    <td className="p-3 font-medium text-foreground">{r.invoiceNumber}</td>
+                    <td className="p-3 text-muted-foreground">{r.date}</td>
+                    <td className="p-3 text-foreground">{r.customerName}</td>
+                    <td className="p-3 text-muted-foreground text-xs">{r.gstin}</td>
+                    <td className="p-3 text-muted-foreground">{r.stateCode}</td>
+                    <td className="p-3">
+                      <span className={`text-xs px-2 py-0.5 rounded ${r.isInterState ? 'bg-blue-500/15 text-blue-600' : 'bg-green-500/15 text-green-600'}`}>
+                        {r.isInterState ? 'Inter' : 'Intra'}
+                      </span>
+                    </td>
+                    <td className="p-3 text-right text-foreground">₹{r.taxableValue.toFixed(2)}</td>
+                    <td className="p-3 text-right text-foreground">₹{r.cgst.toFixed(2)}</td>
+                    <td className="p-3 text-right text-foreground">₹{r.sgst.toFixed(2)}</td>
+                    <td className="p-3 text-right text-foreground">₹{r.igst.toFixed(2)}</td>
+                    <td className="p-3 text-right font-semibold text-foreground">₹{r.invoiceValue.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              {gstr1Rows.length > 0 && (
+                <tfoot>
+                  <tr className="border-t bg-muted/30 font-semibold">
+                    <td colSpan={6} className="p-3 text-foreground">Total</td>
+                    <td className="p-3 text-right text-foreground">₹{gstr1Totals.taxable.toFixed(2)}</td>
+                    <td className="p-3 text-right text-foreground">₹{gstr1Totals.cgst.toFixed(2)}</td>
+                    <td className="p-3 text-right text-foreground">₹{gstr1Totals.sgst.toFixed(2)}</td>
+                    <td className="p-3 text-right text-foreground">₹{gstr1Totals.igst.toFixed(2)}</td>
+                    <td className="p-3 text-right text-foreground">₹{gstr1Totals.value.toFixed(2)}</td>
                   </tr>
                 </tfoot>
               )}
